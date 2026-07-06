@@ -1,0 +1,23 @@
+services:
+  axon-server:
+    image: axoniq/axonserver
+    container_name: axon-server
+    ports:
+      - "8024:8024"   # Axon Server dashboard (HTTP)
+      - "8124:8124"   # gRPC - client connection port used by all services
+    environment:
+      - AXONIQ_AXONSERVER_STANDALONE=true
+    volumes:
+      - axon-data:/axonserver/data
+      - axon-events:/axonserver/events
+      - axon-log:/axonserver/log
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8024/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  axon-data:
+  axon-events:
+  axon-log:

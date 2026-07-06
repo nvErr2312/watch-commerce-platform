@@ -4,6 +4,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
 
+import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventorySummaryDto;
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.InventoryCreatedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.StockAdjustedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.StockDeductedEvent;
@@ -84,5 +85,18 @@ public class InventoryProjection {
         return repository.findByProductId(query.getProductId())
                 .map(view -> (view.getStockQuantity() - view.getReservedQuantity()) >= query.getRequestedQuantity())
                 .orElse(false);
+    }
+
+    /**
+     * Distinct handler so Admin Service can request the shared DTO response
+     * type over Axon's distributed query bus without needing the
+     * InventoryView JPA entity on its classpath.
+     */
+    @QueryHandler
+    public InventorySummaryDto handleForAdmin(FindInventoryByProductIdQuery query) {
+        InventoryView view = handle(query);
+        return new InventorySummaryDto(
+                view.getId(), view.getProductId(), view.getStockQuantity(), view.getReservedQuantity(),
+                view.getStockQuantity() - view.getReservedQuantity());
     }
 }

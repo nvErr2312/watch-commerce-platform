@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import com.fullstack.commonservice.bmad.nguoi3.dto.product.ProductSummaryDto;
 import com.fullstack.commonservice.bmad.nguoi3.event.product.ProductCreatedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.event.product.ProductDeletedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.event.product.ProductPriceChangedEvent;
@@ -98,5 +99,22 @@ public class ProductProjection {
                 .findByDeletedFalseAndNameContainingIgnoreCaseOrDeletedFalseAndBrandContainingIgnoreCase(
                         keyword, keyword, pageable)
                 .getContent();
+    }
+
+    /**
+     * Distinct handler (not an overload of {@link #handle(FindAllProductsQuery)})
+     * so Admin Service can request the shared DTO response type over Axon's
+     * distributed query bus without needing the ProductView JPA entity on its
+     * classpath.
+     */
+    @QueryHandler
+    public List<ProductSummaryDto> handleForAdmin(FindAllProductsQuery query) {
+        return handle(query).stream().map(this::toSummary).toList();
+    }
+
+    private ProductSummaryDto toSummary(ProductView view) {
+        return new ProductSummaryDto(
+                view.getId(), view.getName(), view.getBrand(), view.getCategory(),
+                view.getPrice(), view.getImageUrl());
     }
 }

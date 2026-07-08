@@ -6,6 +6,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import jakarta.validation.Valid;
+
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +54,7 @@ public class AdminProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> create(@RequestBody AdminProductRequest request) {
+    public ResponseEntity<ResponseData<String>> create(@Valid @RequestBody AdminProductRequest request) {
         String productId = UUID.randomUUID().toString();
 
         sendAndWait(new CreateProductCommand(
@@ -64,7 +66,8 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseData<String> update(@PathVariable("id") String productId, @RequestBody AdminProductRequest request) {
+    public ResponseData<String> update(@PathVariable("id") String productId,
+            @Valid @RequestBody AdminProductRequest request) {
         sendAndWait(new UpdateProductCommand(
                 productId, request.getName(), request.getBrand(), request.getCategory(),
                 request.getDescription(), request.getImageUrl()));

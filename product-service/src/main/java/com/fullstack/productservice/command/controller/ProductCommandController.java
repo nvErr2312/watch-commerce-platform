@@ -3,6 +3,8 @@ package com.fullstack.productservice.command.controller;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import jakarta.validation.Valid;
+
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +37,7 @@ public class ProductCommandController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> createProduct(@RequestBody CreateProductRequest request) {
+    public ResponseEntity<ResponseData<String>> createProduct(@Valid @RequestBody CreateProductRequest request) {
         String productId = UUID.randomUUID().toString();
 
         sendAndWait(new CreateProductCommand(
@@ -54,7 +56,7 @@ public class ProductCommandController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseData<String>> updateProduct(
             @PathVariable("id") String productId,
-            @RequestBody UpdateProductRequest request) {
+            @Valid @RequestBody UpdateProductRequest request) {
 
         sendAndWait(new UpdateProductCommand(
                 productId,
@@ -70,7 +72,7 @@ public class ProductCommandController {
     @PutMapping("/{id}/price")
     public ResponseEntity<ResponseData<String>> changePrice(
             @PathVariable("id") String productId,
-            @RequestBody ChangePriceRequest request) {
+            @Valid @RequestBody ChangePriceRequest request) {
 
         sendAndWait(new ChangePriceCommand(productId, request.getNewPrice()));
 

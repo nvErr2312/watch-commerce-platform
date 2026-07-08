@@ -3,6 +3,8 @@ package com.fullstack.inventoryservice.command.controller;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import jakarta.validation.Valid;
+
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +44,7 @@ public class InventoryCommandController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> create(@RequestBody CreateInventoryRequest request) {
+    public ResponseEntity<ResponseData<String>> create(@Valid @RequestBody CreateInventoryRequest request) {
         String inventoryId = UUID.randomUUID().toString();
 
         sendAndWait(new CreateInventoryCommand(inventoryId, request.getProductId(), request.getInitialQuantity()));
@@ -54,7 +56,7 @@ public class InventoryCommandController {
     @PostMapping("/reserve")
     public ResponseEntity<ResponseData<String>> reserve(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) {
+            @Valid @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
         sendAndWait(new ReserveStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
@@ -65,7 +67,7 @@ public class InventoryCommandController {
     @PostMapping("/deduct")
     public ResponseEntity<ResponseData<String>> deduct(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) {
+            @Valid @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
         sendAndWait(new DeductStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
@@ -76,7 +78,7 @@ public class InventoryCommandController {
     @PostMapping("/release")
     public ResponseEntity<ResponseData<String>> release(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) {
+            @Valid @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
         sendAndWait(new ReleaseStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
@@ -87,7 +89,7 @@ public class InventoryCommandController {
     @PutMapping("/{productId}")
     public ResponseEntity<ResponseData<String>> adjust(
             @PathVariable String productId,
-            @RequestBody AdjustStockRequest request) {
+            @Valid @RequestBody AdjustStockRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
         sendAndWait(new AdjustStockCommand(inventoryId, request.getNewStockQuantity()));

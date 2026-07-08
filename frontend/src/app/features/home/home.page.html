@@ -37,7 +37,7 @@
 
         @if (userMenuOpen()) {
           <div class="dropdown" role="menu">
-            <a role="menuitem" href="#profile" (click)="closeUserMenu()">Thông tin cá nhân</a>
+            <a role="menuitem" routerLink="/profile" (click)="closeUserMenu()">Thông tin cá nhân</a>
             <button role="menuitem" type="button" (click)="logout()" [disabled]="loggingOut()">
               {{ loggingOut() ? 'Đang đăng xuất...' : 'Đăng xuất' }}
             </button>

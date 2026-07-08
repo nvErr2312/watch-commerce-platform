@@ -2,6 +2,7 @@ package com.fullstack.userservice.query.projection;
 
 import com.fullstack.commonservice.user.event.UserCreatedEvent;
 import com.fullstack.commonservice.user.event.UserDeletedEvent;
+import com.fullstack.commonservice.user.event.UserProfileUpdatedEvent;
 import com.fullstack.commonservice.user.event.UserStatusUpdatedEvent;
 import com.fullstack.userservice.command.model.Role;
 import com.fullstack.userservice.command.model.UserStatus;
@@ -34,6 +35,17 @@ public class UserProjection {
     public void on(UserStatusUpdatedEvent event) {
         repository.findById(event.getUserId()).ifPresent(user -> {
             user.setStatus(UserStatus.valueOf(event.getStatus()));
+            user.setUpdatedAt(Instant.now());
+            repository.save(user);
+        });
+    }
+
+    @EventHandler
+    public void on(UserProfileUpdatedEvent event) {
+        repository.findById(event.getUserId()).ifPresent(user -> {
+            user.setUsername(event.getUsername());
+            user.setFullName(event.getFullName());
+            user.setPhone(event.getPhone());
             user.setUpdatedAt(Instant.now());
             repository.save(user);
         });

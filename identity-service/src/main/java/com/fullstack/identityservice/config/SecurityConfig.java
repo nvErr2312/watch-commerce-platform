@@ -37,7 +37,8 @@ public class SecurityConfig {
                                 "/auth/login",
                                 "/auth/google",
                                 "/auth/verify-email",
-                                "/auth/refresh"
+                                "/auth/refresh",
+                                "/auth/logout"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class)

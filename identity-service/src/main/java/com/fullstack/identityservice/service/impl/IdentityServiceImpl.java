@@ -5,7 +5,7 @@ import com.fullstack.commonservice.notification.command.SendEmailVerificationCom
 import com.fullstack.commonservice.user.command.CreateUserCommand;
 import com.fullstack.commonservice.user.command.DeleteUserCommand;
 import com.fullstack.commonservice.user.command.UpdateUserStatusCommand;
-import com.fullstack.identityservice.dto.GoogleUserInfo;
+import com.fullstack.identityservice.dto.google.GoogleUserInfo;
 import com.fullstack.identityservice.dto.request.GoogleLoginRequest;
 import com.fullstack.identityservice.dto.request.LoginRequest;
 import com.fullstack.identityservice.dto.request.LogoutRequest;

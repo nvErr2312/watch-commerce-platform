@@ -18,7 +18,6 @@ export interface RegisterRequest {
 
 export interface TokenResponse {
   accessToken: string;
-  refreshToken: string;
   expiresInSeconds: number;
 }
 
@@ -31,18 +30,21 @@ export class IdentityApiService {
   }
 
   login(email: string, password: string): Observable<ApiResponse<TokenResponse>> {
-    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/login', { email, password });
+    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/login', { email, password }, { withCredentials: true });
   }
 
   loginWithGoogle(idToken: string): Observable<ApiResponse<TokenResponse>> {
-    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/google', { idToken });
+    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/google', { idToken }, { withCredentials: true });
   }
 
-  refresh(refreshToken: string): Observable<ApiResponse<TokenResponse>> {
-    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/refresh', { refreshToken });
+  refresh(): Observable<ApiResponse<TokenResponse>> {
+    return this.http.post<ApiResponse<TokenResponse>>('/api/auth/refresh', {}, { withCredentials: true });
   }
 
-  logout(accessToken: string, refreshToken: string): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>('/api/auth/logout', { accessToken, refreshToken });
+  logout(accessToken: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>('/api/auth/logout', {}, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      withCredentials: true,
+    });
   }
 }

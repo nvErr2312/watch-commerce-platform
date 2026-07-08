@@ -31,14 +31,13 @@ export class AuthStore {
 
   logout(): Observable<void> {
     const accessToken = this.tokenStorage.getAccessToken();
-    const refreshToken = this.tokenStorage.getRefreshToken();
 
-    if (!accessToken || !refreshToken) {
+    if (!accessToken) {
       this.logoutLocal();
       return of(void 0);
     }
 
-    return this.identityApi.logout(accessToken, refreshToken).pipe(
+    return this.identityApi.logout(accessToken).pipe(
       catchError(() => of(null)),
       tap(() => this.logoutLocal()),
       map(() => void 0),

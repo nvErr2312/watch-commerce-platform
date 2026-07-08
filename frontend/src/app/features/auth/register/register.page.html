@@ -1,0 +1,60 @@
+<main class="register-page">
+  <div class="ambient-glow"></div>
+
+  <section class="glass-panel" aria-labelledby="register-title">
+    <div class="heading">
+      <p class="brand">HOROLOGUE</p>
+      <h1 id="register-title">Tạo tài khoản</h1>
+    </div>
+
+    <form [formGroup]="form" class="register-form" (ngSubmit)="submit()" novalidate>
+      <label>
+        <span>Họ và tên</span>
+        <input formControlName="fullName" type="text" autocomplete="name" placeholder="Nguyễn Văn A" />
+      </label>
+
+      <label>
+        <span>Tên đăng nhập</span>
+        <input formControlName="username" type="text" autocomplete="username" placeholder="nguyenvana" />
+      </label>
+
+      <label>
+        <span>Email</span>
+        <input formControlName="email" type="email" autocomplete="email" placeholder="you@example.com" />
+      </label>
+
+      <label>
+        <span>Số điện thoại</span>
+        <input formControlName="phone" type="tel" autocomplete="tel" placeholder="0901234567" />
+      </label>
+
+      <label>
+        <span>Mật khẩu</span>
+        <input formControlName="password" type="password" autocomplete="new-password" placeholder="Ít nhất 8 ký tự, có chữ và số" />
+      </label>
+
+      <label>
+        <span>Xác nhận mật khẩu</span>
+        <input formControlName="confirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+      </label>
+
+      <label class="terms">
+        <input formControlName="terms" type="checkbox" />
+        <span>Tôi đồng ý với Điều khoản & Chính sách bảo mật</span>
+      </label>
+
+      @if (message()) {
+        <p class="message" [class.error]="isError()">{{ message() }}</p>
+      }
+
+      <button type="submit" class="submit-button" [disabled]="form.invalid || loading()">
+        {{ loading() ? 'Đang đăng ký...' : 'Đăng ký' }}
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+
+    <div class="login-link">
+      <a routerLink="/login">Đã có tài khoản? <span>Đăng nhập</span></a>
+    </div>
+  </section>
+</main>

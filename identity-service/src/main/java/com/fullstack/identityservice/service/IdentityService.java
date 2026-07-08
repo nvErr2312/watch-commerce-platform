@@ -1,6 +1,7 @@
 package com.fullstack.identityservice.service;
 
 import com.fullstack.identityservice.dto.request.LoginRequest;
+import com.fullstack.identityservice.dto.request.GoogleLoginRequest;
 import com.fullstack.identityservice.dto.request.LogoutRequest;
 import com.fullstack.identityservice.dto.request.RefreshRequest;
 import com.fullstack.identityservice.dto.request.RegisterRequest;
@@ -11,6 +12,7 @@ public interface IdentityService {
     RegisterResponse register(RegisterRequest request);
     void verifyEmail(String token);
     TokenResponse login(LoginRequest request);
+    TokenResponse loginWithGoogle(GoogleLoginRequest request);
     TokenResponse refresh(RefreshRequest request);
     void logout(LogoutRequest request);
     String loginUrl();

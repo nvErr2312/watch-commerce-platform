@@ -1,6 +1,7 @@
 package com.fullstack.identityservice.controller;
 
 import com.fullstack.commonservice.response.ResponseData;
+import com.fullstack.identityservice.dto.request.GoogleLoginRequest;
 import com.fullstack.identityservice.dto.request.LoginRequest;
 import com.fullstack.identityservice.dto.request.LogoutRequest;
 import com.fullstack.identityservice.dto.request.RefreshRequest;
@@ -46,6 +47,12 @@ public class AuthController {
     public ResponseEntity<ResponseData<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(new ResponseData<>("LOGIN_SUCCESS", "Login successfully",
                 identityService.login(request)));
+    }
+
+    @PostMapping("/auth/google")
+    public ResponseEntity<ResponseData<TokenResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(new ResponseData<>("LOGIN_SUCCESS", "Login successfully",
+                identityService.loginWithGoogle(request)));
     }
 
     @PostMapping("/auth/refresh")

@@ -5,6 +5,8 @@ import com.fullstack.commonservice.notification.command.SendEmailVerificationCom
 import com.fullstack.commonservice.user.command.CreateUserCommand;
 import com.fullstack.commonservice.user.command.DeleteUserCommand;
 import com.fullstack.commonservice.user.command.UpdateUserStatusCommand;
+import com.fullstack.identityservice.dto.GoogleUserInfo;
+import com.fullstack.identityservice.dto.request.GoogleLoginRequest;
 import com.fullstack.identityservice.dto.request.LoginRequest;
 import com.fullstack.identityservice.dto.request.LogoutRequest;
 import com.fullstack.identityservice.dto.request.RefreshRequest;
@@ -16,6 +18,7 @@ import com.fullstack.identityservice.model.AccountStatus;
 import com.fullstack.identityservice.model.Role;
 import com.fullstack.identityservice.repository.AccountRepository;
 import com.fullstack.identityservice.service.IdentityService;
+import com.fullstack.identityservice.service.GoogleTokenVerifier;
 import com.fullstack.identityservice.service.RateLimitService;
 import com.fullstack.identityservice.service.TokenService;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +43,7 @@ public class IdentityServiceImpl implements IdentityService {
     private final AccountRepository accountRepository;
     private final CommandGateway commandGateway;
     private final TokenService tokenService;
+    private final GoogleTokenVerifier googleTokenVerifier;
     private final RateLimitService rateLimitService;
     private final StringRedisTemplate redisTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -142,6 +146,27 @@ public class IdentityServiceImpl implements IdentityService {
     }
 
     @Override
+    @Transactional
+    public TokenResponse loginWithGoogle(GoogleLoginRequest request) {
+        GoogleUserInfo googleUser = googleTokenVerifier.verify(request.getIdToken());
+        if (!googleUser.emailVerified()) {
+            throw new IllegalArgumentException("Google email is not verified");
+        }
+
+        String email = googleUser.email().trim().toLowerCase();
+        rateLimitService.check("rate:google-login:" + email, 20, 900);
+
+        Account account = accountRepository.findByEmail(email)
+                .map(existing -> activateGoogleAccount(existing, googleUser))
+                .orElseGet(() -> createGoogleAccount(googleUser));
+
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new IllegalArgumentException("Account is not active");
+        }
+        return tokenService.createSession(account);
+    }
+
+    @Override
     public TokenResponse refresh(RefreshRequest request) {
         Account account = accountRepository.findById(tokenService.accountIdByRefreshToken(request.getRefreshToken()))
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -163,6 +188,38 @@ public class IdentityServiceImpl implements IdentityService {
                 .path("/auth/verify-email")
                 .queryParam("token", token)
                 .toUriString();
+    }
+
+    private Account createGoogleAccount(GoogleUserInfo googleUser) {
+        String email = googleUser.email().trim().toLowerCase();
+        String username = email.substring(0, email.indexOf('@'));
+        Long userId = newUserId();
+
+        commandGateway.sendAndWait(new CreateUserCommand(
+                userId,
+                email,
+                username,
+                googleUser.name(),
+                null,
+                Role.USER.name(),
+                AccountStatus.ACTIVE.name()));
+
+        Account account = new Account();
+        account.setEmail(email);
+        account.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        account.setUserId(userId);
+        account.setRole(Role.USER);
+        account.setStatus(AccountStatus.ACTIVE);
+        return accountRepository.save(account);
+    }
+
+    private Account activateGoogleAccount(Account account, GoogleUserInfo googleUser) {
+        if (account.getStatus() == AccountStatus.PENDING) {
+            account.setStatus(AccountStatus.ACTIVE);
+            account.setUpdatedAt(Instant.now());
+            commandGateway.sendAndWait(new UpdateUserStatusCommand(account.getUserId(), AccountStatus.ACTIVE.name()));
+        }
+        return account;
     }
 
     private Long newUserId() {

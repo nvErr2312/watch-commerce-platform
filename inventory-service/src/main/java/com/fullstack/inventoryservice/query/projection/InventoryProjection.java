@@ -4,6 +4,8 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventorySummaryDto;
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.InventoryCreatedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.StockAdjustedEvent;
@@ -17,6 +19,7 @@ import com.fullstack.inventoryservice.exception.InventoryNotFoundException;
 import com.fullstack.inventoryservice.query.entity.InventoryView;
 import com.fullstack.inventoryservice.query.repository.InventoryViewRepository;
 
+@Slf4j
 @Component
 public class InventoryProjection {
 
@@ -26,8 +29,24 @@ public class InventoryProjection {
         this.repository = repository;
     }
 
+    /**
+     * Idempotent by design: the read-model is rebuilt from scratch (H2 in-memory)
+     * every service restart by replaying the full event history from Axon Server
+     * (which never resets). If the event log ever contains two InventoryCreatedEvent
+     * for the same productId (e.g. from repeated dev/test runs), a hard insert would
+     * violate the unique constraint on product_id and PERMANENTLY stall the
+     * TrackingEventProcessor for this projection - every event after that point,
+     * including brand new ones, would silently never reach the read model. Skipping
+     * (with a warning) keeps replay resilient instead of wedging the whole projection.
+     */
     @EventHandler
     public void on(InventoryCreatedEvent event) {
+        if (repository.findByProductId(event.getProductId()).isPresent()) {
+            log.warn("Bỏ qua InventoryCreatedEvent trùng cho productId {} (inventoryId {}) - đã có tồn kho",
+                    event.getProductId(), event.getInventoryId());
+            return;
+        }
+
         InventoryView view = new InventoryView();
         view.setId(event.getInventoryId());
         view.setProductId(event.getProductId());

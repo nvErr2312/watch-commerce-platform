@@ -110,15 +110,19 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void logout(String accessToken, String refreshToken) {
-        String refreshHash = sha256(refreshToken);
-        String sid = redisTemplate.opsForValue().get(refreshKey(refreshHash));
-        if (sid != null) {
-            revokeSession(sid);
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            String refreshHash = sha256(refreshToken);
+            String sid = redisTemplate.opsForValue().get(refreshKey(refreshHash));
+            if (sid != null) {
+                revokeSession(sid);
+            }
         }
-        try {
-            blacklist(parse(accessToken));
-        } catch (ExpiredJwtException ignored) {
-            // Expired access tokens no longer need blacklisting; the refresh session is revoked above.
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                blacklist(parse(accessToken));
+            } catch (ExpiredJwtException ignored) {
+                // Expired access tokens no longer need blacklisting; the refresh session is revoked above.
+            }
         }
     }
 

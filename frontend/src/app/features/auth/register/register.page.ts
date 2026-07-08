@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../../core/auth/auth.store';
 
@@ -25,6 +25,8 @@ export class RegisterPage {
   protected readonly loading = signal(false);
   protected readonly message = signal('');
   protected readonly isError = signal(false);
+  protected readonly showPassword = signal(false);
+  protected readonly showConfirmPassword = signal(false);
 
   protected readonly form = new FormGroup<RegisterForm>({
     fullName: new FormControl('', { nonNullable: true }),
@@ -35,9 +37,9 @@ export class RegisterPage {
       nonNullable: true,
       validators: [Validators.required, Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/)],
     }),
-    confirmPassword: new FormControl('', { nonNullable: true }),
+    confirmPassword: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     terms: new FormControl(false, { nonNullable: true, validators: [Validators.requiredTrue] }),
-  });
+  }, { validators: passwordMatchValidator });
 
   protected submit(): void {
     if (this.form.invalid) {
@@ -58,7 +60,7 @@ export class RegisterPage {
     }).subscribe({
       next: () => {
         this.isError.set(false);
-        this.message.set('Đăng ký thành công. Hãy verify email trước khi đăng nhập.');
+        this.message.set('Đăng ký thành công. Hãy xác minh email trước khi đăng nhập.');
         this.loading.set(false);
       },
       error: () => {
@@ -68,4 +70,28 @@ export class RegisterPage {
       },
     });
   }
+
+  protected hasError(controlName: keyof RegisterForm, error: string): boolean {
+    const control = this.form.controls[controlName];
+    return control.hasError(error) && (control.dirty || control.touched);
+  }
+
+  protected passwordMismatch(): boolean {
+    const confirmPassword = this.form.controls.confirmPassword;
+    return this.form.hasError('passwordMismatch') && (confirmPassword.dirty || confirmPassword.touched);
+  }
+
+  protected togglePassword(): void {
+    this.showPassword.update((value) => !value);
+  }
+
+  protected toggleConfirmPassword(): void {
+    this.showConfirmPassword.update((value) => !value);
+  }
+}
+
+function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+  return password && confirmPassword && password !== confirmPassword ? { passwordMismatch: true } : null;
 }

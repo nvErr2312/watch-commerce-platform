@@ -1,4 +1,4 @@
-package com.fullstack.identityservice.dto;
+package com.fullstack.identityservice.dto.google;
 
 public record GoogleUserInfo(
         String subject,

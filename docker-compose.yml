@@ -37,7 +37,7 @@ services:
       - "8025:8025"
 
   axonserver:
-    image: axoniq/axonserver:2024.2.2
+    image: axoniq/axonserver:2024.0.4
     container_name: watch-axonserver
     restart: unless-stopped
     ports:
@@ -46,6 +46,15 @@ services:
     volumes:
       - axon_data:/axonserver/data
       - axon_events:/axonserver/events
+
+  discoveryserver:
+    build:
+      context: ./discoveryserver
+      dockerfile: Dockerfile
+    container_name: watch-discoveryserver
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
 
 volumes:
   mysql_data:

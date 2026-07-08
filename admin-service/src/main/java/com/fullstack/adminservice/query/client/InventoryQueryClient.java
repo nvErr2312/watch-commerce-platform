@@ -7,7 +7,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.stereotype.Component;
 
 import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventorySummaryDto;
-import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventoryByProductIdQuery;
+import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventorySummaryByProductIdQuery;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
@@ -27,7 +27,7 @@ public class InventoryQueryClient {
     @TimeLimiter(name = "inventoryService")
     public CompletableFuture<InventorySummaryDto> findByProductId(String productId) {
         return queryGateway.query(
-                new FindInventoryByProductIdQuery(productId),
+                new FindInventorySummaryByProductIdQuery(productId),
                 ResponseTypes.instanceOf(InventorySummaryDto.class));
     }
 

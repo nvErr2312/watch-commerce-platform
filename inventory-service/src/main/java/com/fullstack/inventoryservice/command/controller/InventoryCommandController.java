@@ -20,6 +20,7 @@ import com.fullstack.commonservice.bmad.nguoi3.command.inventory.DeductStockComm
 import com.fullstack.commonservice.bmad.nguoi3.command.inventory.ReleaseStockCommand;
 import com.fullstack.commonservice.bmad.nguoi3.command.inventory.ReserveStockCommand;
 import com.fullstack.commonservice.response.ResponseData;
+import com.fullstack.inventoryservice.common.AxonExceptions;
 import com.fullstack.inventoryservice.dto.AdjustStockRequest;
 import com.fullstack.inventoryservice.dto.CreateInventoryRequest;
 import com.fullstack.inventoryservice.dto.StockQuantityRequest;
@@ -41,12 +42,10 @@ public class InventoryCommandController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> create(@RequestBody CreateInventoryRequest request)
-            throws ExecutionException, InterruptedException {
+    public ResponseEntity<ResponseData<String>> create(@RequestBody CreateInventoryRequest request) {
         String inventoryId = UUID.randomUUID().toString();
 
-        commandGateway.send(new CreateInventoryCommand(
-                inventoryId, request.getProductId(), request.getInitialQuantity())).get();
+        sendAndWait(new CreateInventoryCommand(inventoryId, request.getProductId(), request.getInitialQuantity()));
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseData<>("SUCCESS", "Khởi tạo tồn kho thành công", inventoryId));
@@ -55,10 +54,10 @@ public class InventoryCommandController {
     @PostMapping("/reserve")
     public ResponseEntity<ResponseData<String>> reserve(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
-        commandGateway.send(new ReserveStockCommand(inventoryId, request.getOrderId(), request.getQuantity())).get();
+        sendAndWait(new ReserveStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Giữ hàng thành công", inventoryId));
     }
@@ -66,10 +65,10 @@ public class InventoryCommandController {
     @PostMapping("/deduct")
     public ResponseEntity<ResponseData<String>> deduct(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
-        commandGateway.send(new DeductStockCommand(inventoryId, request.getOrderId(), request.getQuantity())).get();
+        sendAndWait(new DeductStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Trừ kho thành công", inventoryId));
     }
@@ -77,10 +76,10 @@ public class InventoryCommandController {
     @PostMapping("/release")
     public ResponseEntity<ResponseData<String>> release(
             @RequestParam("productId") String productId,
-            @RequestBody StockQuantityRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody StockQuantityRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
-        commandGateway.send(new ReleaseStockCommand(inventoryId, request.getOrderId(), request.getQuantity())).get();
+        sendAndWait(new ReleaseStockCommand(inventoryId, request.getOrderId(), request.getQuantity()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Hoàn kho thành công", inventoryId));
     }
@@ -88,10 +87,10 @@ public class InventoryCommandController {
     @PutMapping("/{productId}")
     public ResponseEntity<ResponseData<String>> adjust(
             @PathVariable String productId,
-            @RequestBody AdjustStockRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody AdjustStockRequest request) {
         String inventoryId = resolveInventoryId(productId);
 
-        commandGateway.send(new AdjustStockCommand(inventoryId, request.getNewStockQuantity())).get();
+        sendAndWait(new AdjustStockCommand(inventoryId, request.getNewStockQuantity()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Cập nhật tồn kho thành công", inventoryId));
     }
@@ -100,5 +99,16 @@ public class InventoryCommandController {
         InventoryView view = inventoryViewRepository.findByProductId(productId)
                 .orElseThrow(() -> new InventoryNotFoundException(productId));
         return view.getId();
+    }
+
+    private void sendAndWait(Object command) {
+        try {
+            commandGateway.send(command).get();
+        } catch (ExecutionException e) {
+            throw AxonExceptions.unwrap(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }

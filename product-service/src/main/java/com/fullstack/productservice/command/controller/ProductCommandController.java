@@ -19,6 +19,7 @@ import com.fullstack.commonservice.bmad.nguoi3.command.product.CreateProductComm
 import com.fullstack.commonservice.bmad.nguoi3.command.product.DeleteProductCommand;
 import com.fullstack.commonservice.bmad.nguoi3.command.product.UpdateProductCommand;
 import com.fullstack.commonservice.response.ResponseData;
+import com.fullstack.productservice.common.AxonExceptions;
 import com.fullstack.productservice.dto.ChangePriceRequest;
 import com.fullstack.productservice.dto.CreateProductRequest;
 import com.fullstack.productservice.dto.UpdateProductRequest;
@@ -34,18 +35,17 @@ public class ProductCommandController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> createProduct(@RequestBody CreateProductRequest request)
-            throws ExecutionException, InterruptedException {
+    public ResponseEntity<ResponseData<String>> createProduct(@RequestBody CreateProductRequest request) {
         String productId = UUID.randomUUID().toString();
 
-        commandGateway.send(new CreateProductCommand(
+        sendAndWait(new CreateProductCommand(
                 productId,
                 request.getName(),
                 request.getBrand(),
                 request.getCategory(),
                 request.getDescription(),
                 request.getPrice(),
-                request.getImageUrl())).get();
+                request.getImageUrl()));
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseData<>("SUCCESS", "Tạo sản phẩm thành công", productId));
@@ -54,15 +54,15 @@ public class ProductCommandController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseData<String>> updateProduct(
             @PathVariable("id") String productId,
-            @RequestBody UpdateProductRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody UpdateProductRequest request) {
 
-        commandGateway.send(new UpdateProductCommand(
+        sendAndWait(new UpdateProductCommand(
                 productId,
                 request.getName(),
                 request.getBrand(),
                 request.getCategory(),
                 request.getDescription(),
-                request.getImageUrl())).get();
+                request.getImageUrl()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Cập nhật sản phẩm thành công", productId));
     }
@@ -70,19 +70,28 @@ public class ProductCommandController {
     @PutMapping("/{id}/price")
     public ResponseEntity<ResponseData<String>> changePrice(
             @PathVariable("id") String productId,
-            @RequestBody ChangePriceRequest request) throws ExecutionException, InterruptedException {
+            @RequestBody ChangePriceRequest request) {
 
-        commandGateway.send(new ChangePriceCommand(productId, request.getNewPrice())).get();
+        sendAndWait(new ChangePriceCommand(productId, request.getNewPrice()));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Cập nhật giá thành công", productId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseData<String>> deleteProduct(@PathVariable("id") String productId)
-            throws ExecutionException, InterruptedException {
-
-        commandGateway.send(new DeleteProductCommand(productId)).get();
+    public ResponseEntity<ResponseData<String>> deleteProduct(@PathVariable("id") String productId) {
+        sendAndWait(new DeleteProductCommand(productId));
 
         return ResponseEntity.ok(new ResponseData<>("SUCCESS", "Xóa sản phẩm thành công", productId));
+    }
+
+    private void sendAndWait(Object command) {
+        try {
+            commandGateway.send(command).get();
+        } catch (ExecutionException e) {
+            throw AxonExceptions.unwrap(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }

@@ -9,7 +9,8 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.stereotype.Component;
 
 import com.fullstack.commonservice.bmad.nguoi3.dto.product.ProductSummaryDto;
-import com.fullstack.commonservice.bmad.nguoi3.query.product.FindAllProductsQuery;
+import com.fullstack.commonservice.bmad.nguoi3.dto.product.ProductSummaryListResult;
+import com.fullstack.commonservice.bmad.nguoi3.query.product.FindAllProductSummariesQuery;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
@@ -29,8 +30,9 @@ public class ProductQueryClient {
     @TimeLimiter(name = "productService")
     public CompletableFuture<List<ProductSummaryDto>> findAll(int page, int size) {
         return queryGateway.query(
-                new FindAllProductsQuery(page, size),
-                ResponseTypes.multipleInstancesOf(ProductSummaryDto.class));
+                new FindAllProductSummariesQuery(page, size),
+                ResponseTypes.instanceOf(ProductSummaryListResult.class))
+                .thenApply(ProductSummaryListResult::getProducts);
     }
 
     private CompletableFuture<List<ProductSummaryDto>> fallbackFindAll(int page, int size, Throwable ex) {

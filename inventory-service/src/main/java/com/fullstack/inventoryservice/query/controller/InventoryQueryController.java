@@ -1,5 +1,6 @@
 package com.fullstack.inventoryservice.query.controller;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.axonframework.messaging.responsetypes.ResponseTypes;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fullstack.commonservice.bmad.nguoi3.query.inventory.CheckStockAvailabilityQuery;
 import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventoryByProductIdQuery;
 import com.fullstack.commonservice.response.ResponseData;
+import com.fullstack.inventoryservice.common.AxonExceptions;
 import com.fullstack.inventoryservice.query.entity.InventoryView;
 
 @RestController
@@ -26,11 +28,9 @@ public class InventoryQueryController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseData<InventoryView> getByProductId(@PathVariable String productId)
-            throws ExecutionException, InterruptedException {
-        InventoryView view = queryGateway
-                .query(new FindInventoryByProductIdQuery(productId), ResponseTypes.instanceOf(InventoryView.class))
-                .get();
+    public ResponseData<InventoryView> getByProductId(@PathVariable String productId) {
+        InventoryView view = await(queryGateway
+                .query(new FindInventoryByProductIdQuery(productId), ResponseTypes.instanceOf(InventoryView.class)));
 
         return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công", view);
     }
@@ -38,11 +38,21 @@ public class InventoryQueryController {
     @GetMapping("/check")
     public ResponseData<Boolean> checkAvailability(
             @RequestParam String productId,
-            @RequestParam int quantity) throws ExecutionException, InterruptedException {
-        Boolean available = queryGateway
-                .query(new CheckStockAvailabilityQuery(productId, quantity), ResponseTypes.instanceOf(Boolean.class))
-                .get();
+            @RequestParam int quantity) {
+        Boolean available = await(queryGateway
+                .query(new CheckStockAvailabilityQuery(productId, quantity), ResponseTypes.instanceOf(Boolean.class)));
 
         return new ResponseData<>("SUCCESS", "Kiểm tra tồn kho thành công", available);
+    }
+
+    private <T> T await(CompletableFuture<T> future) {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            throw AxonExceptions.unwrap(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }

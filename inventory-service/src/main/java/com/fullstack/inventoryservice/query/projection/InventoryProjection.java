@@ -12,6 +12,7 @@ import com.fullstack.commonservice.bmad.nguoi3.event.inventory.StockReleasedEven
 import com.fullstack.commonservice.bmad.nguoi3.event.inventory.StockReservedEvent;
 import com.fullstack.commonservice.bmad.nguoi3.query.inventory.CheckStockAvailabilityQuery;
 import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventoryByProductIdQuery;
+import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventorySummaryByProductIdQuery;
 import com.fullstack.inventoryservice.exception.InventoryNotFoundException;
 import com.fullstack.inventoryservice.query.entity.InventoryView;
 import com.fullstack.inventoryservice.query.repository.InventoryViewRepository;
@@ -88,13 +89,15 @@ public class InventoryProjection {
     }
 
     /**
-     * Distinct handler so Admin Service can request the shared DTO response
-     * type over Axon's distributed query bus without needing the
-     * InventoryView JPA entity on its classpath.
+     * Dedicated query type (not an overload of FindInventoryByProductIdQuery)
+     * so Admin Service can request the shared DTO response type over Axon's
+     * distributed query bus without ambiguity between two handlers on the
+     * same query class.
      */
     @QueryHandler
-    public InventorySummaryDto handleForAdmin(FindInventoryByProductIdQuery query) {
-        InventoryView view = handle(query);
+    public InventorySummaryDto handle(FindInventorySummaryByProductIdQuery query) {
+        InventoryView view = repository.findByProductId(query.getProductId())
+                .orElseThrow(() -> new InventoryNotFoundException(query.getProductId()));
         return new InventorySummaryDto(
                 view.getId(), view.getProductId(), view.getStockQuantity(), view.getReservedQuantity(),
                 view.getStockQuantity() - view.getReservedQuantity());

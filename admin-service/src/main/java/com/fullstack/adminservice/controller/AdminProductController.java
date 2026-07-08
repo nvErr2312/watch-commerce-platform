@@ -3,6 +3,7 @@ package com.fullstack.adminservice.controller;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fullstack.adminservice.common.AxonExceptions;
 import com.fullstack.adminservice.dto.AdminProductRequest;
 import com.fullstack.adminservice.query.client.ProductQueryClient;
 import com.fullstack.commonservice.bmad.nguoi3.command.product.ChangePriceCommand;
@@ -44,47 +46,65 @@ public class AdminProductController {
     }
 
     @GetMapping
-    public ResponseData<List<ProductSummaryDto>> list() throws ExecutionException, InterruptedException {
+    public ResponseData<List<ProductSummaryDto>> list() {
         return new ResponseData<>("SUCCESS", "Lấy danh sách sản phẩm thành công",
-                productQueryClient.findAll(0, 100).get());
+                await(productQueryClient.findAll(0, 100)));
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<String>> create(@RequestBody AdminProductRequest request)
-            throws ExecutionException, InterruptedException {
+    public ResponseEntity<ResponseData<String>> create(@RequestBody AdminProductRequest request) {
         String productId = UUID.randomUUID().toString();
 
-        commandGateway.send(new CreateProductCommand(
+        sendAndWait(new CreateProductCommand(
                 productId, request.getName(), request.getBrand(), request.getCategory(),
-                request.getDescription(), request.getPrice(), request.getImageUrl())).get();
+                request.getDescription(), request.getPrice(), request.getImageUrl()));
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseData<>("SUCCESS", "Tạo sản phẩm thành công", productId));
     }
 
     @PutMapping("/{id}")
-    public ResponseData<String> update(@PathVariable("id") String productId, @RequestBody AdminProductRequest request)
-            throws ExecutionException, InterruptedException {
-        commandGateway.send(new UpdateProductCommand(
+    public ResponseData<String> update(@PathVariable("id") String productId, @RequestBody AdminProductRequest request) {
+        sendAndWait(new UpdateProductCommand(
                 productId, request.getName(), request.getBrand(), request.getCategory(),
-                request.getDescription(), request.getImageUrl())).get();
+                request.getDescription(), request.getImageUrl()));
 
         return new ResponseData<>("SUCCESS", "Cập nhật sản phẩm thành công", productId);
     }
 
     @PutMapping("/{id}/price")
-    public ResponseData<String> changePrice(@PathVariable("id") String productId, @RequestBody BigDecimal newPrice)
-            throws ExecutionException, InterruptedException {
-        commandGateway.send(new ChangePriceCommand(productId, newPrice)).get();
+    public ResponseData<String> changePrice(@PathVariable("id") String productId, @RequestBody BigDecimal newPrice) {
+        sendAndWait(new ChangePriceCommand(productId, newPrice));
 
         return new ResponseData<>("SUCCESS", "Cập nhật giá thành công", productId);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseData<String> delete(@PathVariable("id") String productId)
-            throws ExecutionException, InterruptedException {
-        commandGateway.send(new DeleteProductCommand(productId)).get();
+    public ResponseData<String> delete(@PathVariable("id") String productId) {
+        sendAndWait(new DeleteProductCommand(productId));
 
         return new ResponseData<>("SUCCESS", "Xóa sản phẩm thành công", productId);
+    }
+
+    private void sendAndWait(Object command) {
+        try {
+            commandGateway.send(command).get();
+        } catch (ExecutionException e) {
+            throw AxonExceptions.unwrap(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private <T> T await(CompletableFuture<T> future) {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            throw AxonExceptions.unwrap(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }

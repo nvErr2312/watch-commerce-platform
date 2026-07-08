@@ -12,7 +12,6 @@
     <modules>
         <module>commonservice</module>
         <module>discoveryserver</module>
-        <module>employeeservice</module>
         <module>identity-service</module>
         <module>user-service</module>
         <module>order-service</module>

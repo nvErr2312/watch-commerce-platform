@@ -1,7 +1,6 @@
 package com.fullstack.identityservice.service.impl;
 
 import com.fullstack.commonservice.advice.ResourceNotFoundException;
-import com.fullstack.commonservice.notification.command.SendEmailVerificationCommand;
 import com.fullstack.commonservice.user.command.CreateUserCommand;
 import com.fullstack.commonservice.user.command.DeleteUserCommand;
 import com.fullstack.commonservice.user.command.UpdateUserStatusCommand;

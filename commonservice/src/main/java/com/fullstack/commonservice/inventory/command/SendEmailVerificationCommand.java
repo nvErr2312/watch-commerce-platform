@@ -1,4 +1,4 @@
-package com.fullstack.commonservice.notification.command;
+package com.fullstack.commonservice.inventory.command;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -42,8 +42,12 @@ public class ShippingFeeCommandHandler {
     }
 
     private BigDecimal feeFor(String shippingAddress) {
-        String regionCode = shippingAddress == null ? "DEFAULT" : shippingAddress.trim().toUpperCase(Locale.ROOT);
-        return ruleRepository.findById(regionCode)
+        String address = shippingAddress == null ? "" : shippingAddress.toUpperCase(Locale.ROOT);
+        return ruleRepository.findAll().stream()
+                .filter(rule -> !"DEFAULT".equals(rule.getRegionCode()))
+                .filter(rule -> address.contains(rule.getRegionCode())
+                        || address.contains(rule.getRegionName().toUpperCase(Locale.ROOT)))
+                .findFirst()
                 .or(() -> ruleRepository.findById("DEFAULT"))
                 .map(ShippingFeeRule::getFee)
                 .orElse(BigDecimal.valueOf(45000));

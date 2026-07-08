@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -18,7 +18,9 @@ interface LoginForm {
   styleUrl: './login.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginPage {
+export class LoginPage implements AfterViewInit {
+  @ViewChild('googleButton') private googleButton?: ElementRef<HTMLElement>;
+
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   protected readonly loading = signal(false);
@@ -32,6 +34,10 @@ export class LoginPage {
     password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     remember: new FormControl(false, { nonNullable: true }),
   });
+
+  ngAfterViewInit(): void {
+    this.renderGoogleButton();
+  }
 
   protected submit(): void {
     if (this.form.invalid) {
@@ -67,31 +73,50 @@ export class LoginPage {
     this.showPassword.update((value) => !value);
   }
 
-  protected loginWithGoogle(): void {
+  private renderGoogleButton(attempt = 0): void {
     if (!googleConfig.clientId) {
       this.isError.set(true);
       this.message.set('Chưa cấu hình Google Client ID.');
       return;
     }
 
-    if (!window.google) {
-      this.isError.set(true);
-      this.message.set('Google Sign-In chưa sẵn sàng, vui lòng thử lại.');
+    if (!this.googleButton) {
       return;
     }
 
-    this.googleLoading.set(true);
-    this.message.set('');
+    if (!window.google) {
+      if (attempt < 20) {
+window.setTimeout(() => this.renderGoogleButton(attempt + 1), 150);
+        return;
+      }
+
+      this.isError.set(true);
+      this.message.set('Google Sign-In chưa sẵn sàng, vui lòng tải lại trang.');
+      return;
+    }
+
     window.google.accounts.id.initialize({
       client_id: googleConfig.clientId,
       callback: (response) => this.handleGoogleCredential(response),
       auto_select: false,
       cancel_on_tap_outside: true,
     });
-    window.google.accounts.id.prompt();
+
+    window.google.accounts.id.renderButton(this.googleButton.nativeElement, {
+      theme: 'outline',
+      size: 'large',
+      type: 'standard',
+      shape: 'rectangular',
+      text: 'signin_with',
+      logo_alignment: 'left',
+      width: 320,
+    });
   }
 
   private handleGoogleCredential(response: GoogleCredentialResponse): void {
+    this.googleLoading.set(true);
+    this.message.set('');
+
     this.auth.loginWithGoogle(response.credential).subscribe({
       next: () => {
         this.isError.set(false);

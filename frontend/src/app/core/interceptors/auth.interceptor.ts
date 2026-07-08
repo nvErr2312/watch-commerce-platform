@@ -38,15 +38,15 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       );
 
       return refreshRequest$.pipe(
+        catchError((refreshError: unknown) => {
+          auth.logoutLocal();
+          return throwError(() => refreshError);
+        }),
         switchMap((tokens) => next(request.clone({
           setHeaders: {
             Authorization: `Bearer ${tokens.accessToken}`,
           },
         }))),
-        catchError((refreshError: unknown) => {
-          auth.logoutLocal();
-          return throwError(() => refreshError);
-        }),
       );
     }),
   );

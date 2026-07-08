@@ -180,8 +180,7 @@ a {
   color: #ffb4ab;
 }
 
-.submit-button,
-.socials button {
+.submit-button {
   min-height: 48px;
   border-radius: 8px;
   font: inherit;
@@ -228,23 +227,18 @@ a {
 .socials {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-}
-
-.socials button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  justify-items: center;
   gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e4e2e4;
-  background: rgba(255, 255, 255, 0.05);
 }
 
-.google-button svg {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 auto;
+.google-button-host {
+  min-height: 44px;
+}
+
+.google-status {
+  margin: 0;
+  color: #c7c6ca;
+  font-size: 12px;
 }
 
 .register-link {

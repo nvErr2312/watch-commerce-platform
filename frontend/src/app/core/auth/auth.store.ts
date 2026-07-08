@@ -25,6 +25,13 @@ export class AuthStore {
     );
   }
 
+  refresh(): Observable<TokenResponse> {
+    return this.identityApi.refresh().pipe(
+      map((response) => response.data),
+      tap((tokens) => this.saveTokens(tokens)),
+    );
+  }
+
   register(request: RegisterRequest): Observable<unknown> {
     return this.identityApi.register(request).pipe(map((response) => response.data));
   }

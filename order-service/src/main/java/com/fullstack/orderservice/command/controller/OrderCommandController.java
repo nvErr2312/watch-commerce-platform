@@ -68,6 +68,6 @@ public class OrderCommandController {
     }
 
     private Long newOrderId() {
-        return UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+        return UUID.randomUUID().getMostSignificantBits() & ((1L << 53) - 1);
     }
 }

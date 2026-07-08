@@ -25,6 +25,7 @@ export class LoginPage {
   protected readonly googleLoading = signal(false);
   protected readonly message = signal('');
   protected readonly isError = signal(false);
+  protected readonly showPassword = signal(false);
 
   protected readonly form = new FormGroup<LoginForm>({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -51,22 +52,31 @@ export class LoginPage {
       },
       error: () => {
         this.isError.set(true);
-        this.message.set('Đăng nhập thất bại. Kiểm tra email, mật khẩu hoặc trạng thái verify email.');
+        this.message.set('Tên đăng nhập hoặc mật khẩu không đúng.');
         this.loading.set(false);
       },
     });
   }
 
+  protected hasError(controlName: keyof LoginForm, error: string): boolean {
+    const control = this.form.controls[controlName];
+    return control.hasError(error) && (control.dirty || control.touched);
+  }
+
+  protected togglePassword(): void {
+    this.showPassword.update((value) => !value);
+  }
+
   protected loginWithGoogle(): void {
     if (!googleConfig.clientId) {
       this.isError.set(true);
-      this.message.set('Chua cau hinh Google Client ID.');
+      this.message.set('Chưa cấu hình Google Client ID.');
       return;
     }
 
     if (!window.google) {
       this.isError.set(true);
-      this.message.set('Google Sign-In chua san sang, vui long thu lai.');
+      this.message.set('Google Sign-In chưa sẵn sàng, vui lòng thử lại.');
       return;
     }
 
@@ -85,13 +95,13 @@ export class LoginPage {
     this.auth.loginWithGoogle(response.credential).subscribe({
       next: () => {
         this.isError.set(false);
-        this.message.set('Dang nhap Google thanh cong.');
+        this.message.set('Đăng nhập Google thành công.');
         this.googleLoading.set(false);
         void this.router.navigateByUrl('/home');
       },
       error: () => {
         this.isError.set(true);
-        this.message.set('Dang nhap Google that bai.');
+        this.message.set('Đăng nhập Google thất bại.');
         this.googleLoading.set(false);
       },
     });

@@ -12,7 +12,7 @@
 	<artifactId>inventoryservice</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>inventory-service</name>
-	<description>Inventory Service - Nguoi 3</description>
+	<description>Inventory Service - Command side (checkout reservations) by Nguoi 4, Query side (product/stock display) by Nguoi 3</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -59,9 +59,22 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>33.3.1-jre</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

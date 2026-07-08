@@ -36,6 +36,10 @@ spring:
                 redis-rate-limiter.burstCapacity: 20
                 redis-rate-limiter.requestedTokens: 1
             - KeyAuthFilter
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
 
 eureka:
   instance:

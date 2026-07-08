@@ -1,5 +1,6 @@
 package com.fullstack.inventoryservice.query.controller;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -8,14 +9,14 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fullstack.commonservice.bmad.nguoi3.query.inventory.CheckStockAvailabilityQuery;
-import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventoryByProductIdQuery;
+import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventoryItemDto;
+import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventoryItemListResult;
+import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindAllInventoryItemsQuery;
+import com.fullstack.commonservice.bmad.nguoi3.query.inventory.FindInventoryItemByProductIdQuery;
 import com.fullstack.commonservice.response.ResponseData;
 import com.fullstack.inventoryservice.common.AxonExceptions;
-import com.fullstack.inventoryservice.query.entity.InventoryView;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -28,21 +29,19 @@ public class InventoryQueryController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseData<InventoryView> getByProductId(@PathVariable String productId) {
-        InventoryView view = await(queryGateway
-                .query(new FindInventoryByProductIdQuery(productId), ResponseTypes.instanceOf(InventoryView.class)));
+    public ResponseData<InventoryItemDto> getByProductId(@PathVariable Long productId) {
+        InventoryItemDto item = await(queryGateway.query(
+                new FindInventoryItemByProductIdQuery(productId), ResponseTypes.instanceOf(InventoryItemDto.class)));
 
-        return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công", view);
+        return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công", item);
     }
 
-    @GetMapping("/check")
-    public ResponseData<Boolean> checkAvailability(
-            @RequestParam String productId,
-            @RequestParam int quantity) {
-        Boolean available = await(queryGateway
-                .query(new CheckStockAvailabilityQuery(productId, quantity), ResponseTypes.instanceOf(Boolean.class)));
+    @GetMapping
+    public ResponseData<List<InventoryItemDto>> getAll() {
+        InventoryItemListResult result = await(queryGateway.query(
+                new FindAllInventoryItemsQuery(), ResponseTypes.instanceOf(InventoryItemListResult.class)));
 
-        return new ResponseData<>("SUCCESS", "Kiểm tra tồn kho thành công", available);
+        return new ResponseData<>("SUCCESS", "Lấy danh sách tồn kho thành công", result.getItems());
     }
 
     private <T> T await(CompletableFuture<T> future) {

@@ -1,61 +1,43 @@
 package com.fullstack.adminservice.controller;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fullstack.adminservice.common.AxonExceptions;
 import com.fullstack.adminservice.query.client.InventoryQueryClient;
-import com.fullstack.commonservice.bmad.nguoi3.command.inventory.AdjustStockCommand;
-import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventorySummaryDto;
+import com.fullstack.commonservice.bmad.nguoi3.dto.inventory.InventoryItemDto;
 import com.fullstack.commonservice.response.ResponseData;
 
 /**
- * Proxies admin inventory management (FR18) - Admin Service never touches
- * Inventory Service's database directly (FR35).
+ * Read-only: Inventory Service's Command side (reserve/release for checkout)
+ * is owned by Nguoi 4 and has no "manual admin adjust" handler, so that
+ * capability (FR18) has no home right now - flagged for the team, not
+ * silently faked here.
  */
 @RestController
 @RequestMapping("/api/admin/inventory")
 public class AdminInventoryController {
 
-    private final CommandGateway commandGateway;
     private final InventoryQueryClient inventoryQueryClient;
 
-    public AdminInventoryController(CommandGateway commandGateway, InventoryQueryClient inventoryQueryClient) {
-        this.commandGateway = commandGateway;
+    public AdminInventoryController(InventoryQueryClient inventoryQueryClient) {
         this.inventoryQueryClient = inventoryQueryClient;
     }
 
-    @GetMapping("/{productId}")
-    public ResponseData<InventorySummaryDto> get(@PathVariable String productId) {
-        return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công",
-                await(inventoryQueryClient.findByProductId(productId)));
+    @GetMapping
+    public ResponseData<List<InventoryItemDto>> list() {
+        return new ResponseData<>("SUCCESS", "Lấy danh sách tồn kho thành công", await(inventoryQueryClient.findAll()));
     }
 
-    @PutMapping("/{productId}")
-    public ResponseData<String> adjust(@PathVariable String productId, @RequestBody int newStockQuantity) {
-        InventorySummaryDto inventory = await(inventoryQueryClient.findByProductId(productId));
-        if (inventory.getInventoryId() == null) {
-            throw new IllegalArgumentException("Không tìm thấy tồn kho cho sản phẩm: " + productId);
-        }
-
-        try {
-            commandGateway.send(new AdjustStockCommand(inventory.getInventoryId(), newStockQuantity)).get();
-        } catch (ExecutionException e) {
-            throw AxonExceptions.unwrap(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(e);
-        }
-
-        return new ResponseData<>("SUCCESS", "Cập nhật tồn kho thành công", productId);
+    @GetMapping("/{productId}")
+    public ResponseData<InventoryItemDto> get(@PathVariable Long productId) {
+        return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công", await(inventoryQueryClient.findByProductId(productId)));
     }
 
     private <T> T await(CompletableFuture<T> future) {

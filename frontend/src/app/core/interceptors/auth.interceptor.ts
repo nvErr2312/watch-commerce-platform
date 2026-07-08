@@ -2,7 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { TokenStorageService } from '../auth/token-storage.service';
 
-const PUBLIC_AUTH_ENDPOINTS = ['/auth/login', '/auth/google', '/auth/register', '/auth/refresh'];
+const PUBLIC_AUTH_ENDPOINTS = ['/auth/login', '/auth/google', '/auth/register', '/auth/refresh', '/auth/logout'];
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const token = inject(TokenStorageService).getAccessToken();

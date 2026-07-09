@@ -29,7 +29,7 @@ public class InventoryQueryController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseData<InventoryItemDto> getByProductId(@PathVariable Long productId) {
+    public ResponseData<InventoryItemDto> getByProductId(@PathVariable String productId) {
         InventoryItemDto item = await(queryGateway.query(
                 new FindInventoryItemByProductIdQuery(productId), ResponseTypes.instanceOf(InventoryItemDto.class)));
 

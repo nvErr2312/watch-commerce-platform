@@ -18,9 +18,8 @@ import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * productId here is Long (Inventory Service's checkout-reservation catalog,
- * owned by Nguoi 4) - NOT the same identity as Product Service's String/UUID
- * productId. See InventoryItemDto Javadoc.
+ * productId here is String/UUID, matching Product Service's identity space.
+ * See InventoryItemDto Javadoc.
  */
 @Slf4j
 @Component
@@ -42,7 +41,7 @@ public class InventoryQueryClient {
 
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackFindByProductId")
     @TimeLimiter(name = "inventoryService")
-    public CompletableFuture<InventoryItemDto> findByProductId(Long productId) {
+    public CompletableFuture<InventoryItemDto> findByProductId(String productId) {
         return queryGateway.query(
                 new FindInventoryItemByProductIdQuery(productId),
                 ResponseTypes.instanceOf(InventoryItemDto.class));
@@ -53,7 +52,7 @@ public class InventoryQueryClient {
         return CompletableFuture.completedFuture(Collections.emptyList());
     }
 
-    private CompletableFuture<InventoryItemDto> fallbackFindByProductId(Long productId, Throwable ex) {
+    private CompletableFuture<InventoryItemDto> fallbackFindByProductId(String productId, Throwable ex) {
         log.warn("Inventory Service không phản hồi cho productId {}: {}", productId, ex.getMessage());
         return CompletableFuture.completedFuture(new InventoryItemDto(productId, 0));
     }

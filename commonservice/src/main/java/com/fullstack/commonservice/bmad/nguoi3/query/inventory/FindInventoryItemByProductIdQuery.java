@@ -5,15 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * productId is Long to match InventoryItem (inventory-service's Command-side
- * entity, owned by Nguoi 4 for the checkout Saga) - NOT the same identity
- * space as Product Service's String/UUID productId. See dto/inventory
- * package Javadoc for the full explanation of this mismatch.
+ * productId is String/UUID, matching Product Service's identity space -
+ * the Long/String mismatch between Product and Inventory has been resolved
+ * team-wide; Inventory Service's Command side now uses the same UUIDs.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class FindInventoryItemByProductIdQuery {
 
-    private Long productId;
+    private String productId;
 }

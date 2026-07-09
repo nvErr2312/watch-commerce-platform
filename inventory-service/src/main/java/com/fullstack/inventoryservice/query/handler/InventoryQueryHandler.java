@@ -32,7 +32,7 @@ public class InventoryQueryHandler {
     @QueryHandler
     public InventoryItemDto handle(FindInventoryItemByProductIdQuery query) {
         InventoryItem item = repository.findById(query.getProductId())
-                .orElseThrow(() -> new InventoryNotFoundException(String.valueOf(query.getProductId())));
+                .orElseThrow(() -> new InventoryNotFoundException(query.getProductId()));
         return toDto(item);
     }
 

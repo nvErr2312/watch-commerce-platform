@@ -36,7 +36,7 @@ public class AdminInventoryController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseData<InventoryItemDto> get(@PathVariable Long productId) {
+    public ResponseData<InventoryItemDto> get(@PathVariable String productId) {
         return new ResponseData<>("SUCCESS", "Lấy tồn kho thành công", await(inventoryQueryClient.findByProductId(productId)));
     }
 

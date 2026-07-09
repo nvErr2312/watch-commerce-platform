@@ -10,10 +10,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Kept as two separate lists rather than joined - Product Service's productId
- * (String/UUID) and Inventory Service's productId (Long, checkout-reservation
- * mock catalog) are not the same identity space yet, so a per-product
- * stock join would be fabricated data. See InventoryItemDto Javadoc.
+ * Kept as two separate lists rather than joined server-side. Both productId
+ * spaces now match (String/UUID, see InventoryItemDto Javadoc), so a
+ * per-product stock join is possible - just not implemented here yet.
  */
 @Data
 @NoArgsConstructor

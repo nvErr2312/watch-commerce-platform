@@ -31,4 +31,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/products/product-management.page').then((m) => m.ProductManagementPage),
   },
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/profile/profile.page').then((m) => m.ProfilePage),
+  },
 ];

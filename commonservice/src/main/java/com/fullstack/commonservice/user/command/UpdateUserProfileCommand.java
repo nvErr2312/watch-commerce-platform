@@ -1,4 +1,4 @@
-package com.fullstack.commonservice.notification.command;
+package com.fullstack.commonservice.user.command;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,8 +8,10 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SendEmailVerificationCommand {
+public class UpdateUserProfileCommand {
     @TargetAggregateIdentifier
-    private String email;
-    private String verificationLink;
+    private Long userId;
+    private String username;
+    private String fullName;
+    private String phone;
 }

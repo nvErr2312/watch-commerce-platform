@@ -2,6 +2,7 @@ package com.fullstack.userservice.query.controller;
 
 import com.fullstack.commonservice.advice.UnauthorizedException;
 import com.fullstack.commonservice.response.ResponseData;
+import com.fullstack.commonservice.security.jwt.JwtClaims;
 import com.fullstack.commonservice.user.query.GetUserByEmailQuery;
 import com.fullstack.commonservice.user.query.GetUserByIdQuery;
 import com.fullstack.commonservice.user.result.UserResult;
@@ -13,6 +14,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -25,6 +27,14 @@ public class UserQueryController {
 
     @Value("${app.internal-token}")
     private String internalToken;
+
+    @GetMapping("/users/me")
+    public ResponseEntity<ResponseData<UserResponse>> me(Authentication authentication) {
+        JwtClaims claims = (JwtClaims) authentication.getPrincipal();
+        UserResult user = queryGateway.query(new GetUserByIdQuery(Long.parseLong(claims.userId())),
+                ResponseTypes.instanceOf(UserResult.class)).join();
+        return ResponseEntity.ok(new ResponseData<>("USER_FOUND", "User found", toResponse(user)));
+    }
 
     @GetMapping("/internal/users/by-email/{email}")
     public ResponseEntity<ResponseData<UserResponse>> getByEmail(

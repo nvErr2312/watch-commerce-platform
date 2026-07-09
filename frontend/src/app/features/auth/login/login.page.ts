@@ -86,7 +86,7 @@ export class LoginPage implements AfterViewInit {
 
     if (!window.google) {
       if (attempt < 20) {
-window.setTimeout(() => this.renderGoogleButton(attempt + 1), 150);
+        window.setTimeout(() => this.renderGoogleButton(attempt + 1), 150);
         return;
       }
 

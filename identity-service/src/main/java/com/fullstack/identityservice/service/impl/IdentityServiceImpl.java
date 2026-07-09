@@ -1,6 +1,10 @@
 package com.fullstack.identityservice.service.impl;
 
 import com.fullstack.commonservice.advice.ResourceNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fullstack.commonservice.notification.event.EmailVerificationRequestedEvent;
+import com.fullstack.commonservice.service.KafkaService;
 import com.fullstack.commonservice.user.command.CreateUserCommand;
 import com.fullstack.commonservice.user.command.DeleteUserCommand;
 import com.fullstack.commonservice.user.command.UpdateUserStatusCommand;
@@ -45,6 +49,8 @@ public class IdentityServiceImpl implements IdentityService {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final RateLimitService rateLimitService;
     private final StringRedisTemplate redisTemplate;
+    private final KafkaService kafkaService;
+    private final ObjectMapper objectMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Value("${app.email-verification.ttl-minutes}")
@@ -55,6 +61,9 @@ public class IdentityServiceImpl implements IdentityService {
 
     @Value("${app.identity-service.base-url}")
     private String identityBaseUrl;
+
+    @Value("${app.kafka.topics.email-verification}")
+    private String emailVerificationTopic;
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -88,9 +97,8 @@ public class IdentityServiceImpl implements IdentityService {
             account.setStatus(AccountStatus.PENDING);
             account = accountRepository.save(account);
 
-            // commandGateway.sendAndWait(new SendEmailVerificationCommand(email, createVerificationLink(account.getId())));
             String verificationLink = createVerificationLink(account.getId());
-            System.out.println("Email verification link: " + verificationLink);
+            sendVerificationEmail(account.getEmail(), verificationLink);
 
             return RegisterResponse.builder()
                     .accountId(account.getId())
@@ -187,6 +195,15 @@ public class IdentityServiceImpl implements IdentityService {
                 .path("/auth/verify-email")
                 .queryParam("token", token)
                 .toUriString();
+    }
+
+    private void sendVerificationEmail(String email, String verificationLink) {
+        try {
+            kafkaService.sendMessage(emailVerificationTopic,
+                    objectMapper.writeValueAsString(new EmailVerificationRequestedEvent(email, verificationLink)));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Could not create email verification message", exception);
+        }
     }
 
     private Account createGoogleAccount(GoogleUserInfo googleUser) {

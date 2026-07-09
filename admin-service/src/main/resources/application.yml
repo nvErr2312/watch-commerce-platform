@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: admin-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: admin-service
+  mail:
+    host: localhost
+    port: 1025
 
 axon:
   axonserver:

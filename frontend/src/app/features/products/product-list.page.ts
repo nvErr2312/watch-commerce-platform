@@ -1,15 +1,17 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CatalogProduct, ProductCatalogApiService } from '../../core/api/products/product-catalog-api.service';
 
 type PriceRange = 'all' | 'under10m' | '10m-200m' | 'over200m';
 type SortOption = 'new' | 'price_asc' | 'price_desc';
 
 const PAGE_SIZE = 6;
+const SKELETON_COUNT = 6;
 
 @Component({
   selector: 'app-product-list-page',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, RouterLink],
   templateUrl: './product-list.page.html',
   styleUrl: './product-list.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,6 +73,8 @@ export class ProductListPage {
     const start = this.page() * PAGE_SIZE;
     return this.sorted().slice(start, start + PAGE_SIZE);
   });
+
+  protected readonly skeletonPlaceholders = Array.from({ length: SKELETON_COUNT });
 
   constructor() {
     this.reload();

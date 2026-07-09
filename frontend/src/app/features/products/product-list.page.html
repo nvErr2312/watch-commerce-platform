@@ -82,35 +82,54 @@
     }
 
     @if (loading()) {
-      <p class="empty-state">Đang tải...</p>
+      <div class="product-grid">
+        @for (_ of skeletonPlaceholders; track $index) {
+          <div class="watch-card glass-panel skeleton">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-info">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line medium"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        }
+      </div>
     } @else if (pageItems().length === 0) {
       <p class="empty-state">Không tìm thấy sản phẩm nào.</p>
     } @else {
       <div class="product-grid">
         @for (product of pageItems(); track product.id) {
           <article class="watch-card glass-panel">
-            <div class="watch-image">
-              @if (product.imageUrl) {
-                <img [src]="product.imageUrl" [alt]="product.name" />
-              }
-            </div>
-            <div class="watch-info">
-              <p class="brand-label">{{ product.brand || '—' }}</p>
-              <h3>{{ product.name }}</h3>
-              <div class="price-row">
-                <span class="price">{{ product.price | number }} ₫</span>
-                <button
-                  type="button"
-                  class="favorite-btn"
-                  [class.active]="favorites().has(product.id)"
-                  (click)="toggleFavorite(product.id)"
-                  aria-label="Yêu thích"
-                >
-                  <svg viewBox="0 0 24 24" width="20" height="20">
-                    <path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 6 3.5C14.5 6 16 5 18 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z" [attr.fill]="favorites().has(product.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                  </svg>
-                </button>
+            <a class="card-link" [routerLink]="['/products', product.id]">
+              <div class="watch-image">
+                @if (product.imageUrl) {
+                  <img [src]="product.imageUrl" [alt]="product.name" />
+                }
+                <span class="view-hint">Xem chi tiết</span>
               </div>
+              <div class="watch-info">
+                <div class="info-top">
+                  <p class="brand-label">{{ product.brand || '—' }}</p>
+                  @if (product.category) {
+                    <span class="category-chip">{{ product.category }}</span>
+                  }
+                </div>
+                <h3>{{ product.name }}</h3>
+              </div>
+            </a>
+            <div class="card-footer">
+              <span class="price">{{ product.price | number }} ₫</span>
+              <button
+                type="button"
+                class="favorite-btn"
+                [class.active]="favorites().has(product.id)"
+                (click)="toggleFavorite(product.id)"
+                aria-label="Yêu thích"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 5 6 5c2 0 3.5 1 6 3.5C14.5 6 16 5 18 5c3.5 0 5.5 3.5 3.5 7.5C19 16.65 12 21 12 21z" [attr.fill]="favorites().has(product.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+              </button>
             </div>
           </article>
         }

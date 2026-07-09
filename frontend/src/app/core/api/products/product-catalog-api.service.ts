@@ -19,6 +19,11 @@ export interface CatalogProduct {
   deleted: boolean;
 }
 
+export interface CatalogProductDetail extends CatalogProduct {
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CatalogSearchParams {
   keyword?: string;
   brand?: string;
@@ -30,8 +35,7 @@ export interface CatalogSearchParams {
 /**
  * Calls Product Service's public read endpoints (/api/products) directly -
  * unlike ProductsApiService (admin proxy), this is the customer-facing
- * catalog and requires no admin role. Needs API Gateway to route
- * /api/products/** to product-service (not configured yet - see team notes).
+ * catalog and requires no admin role. Routed through API Gateway.
  */
 @Injectable({ providedIn: 'root' })
 export class ProductCatalogApiService {
@@ -41,6 +45,10 @@ export class ProductCatalogApiService {
   list(page = 0, size = 20): Observable<ApiResponse<CatalogProduct[]>> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http.get<ApiResponse<CatalogProduct[]>>(this.baseUrl, { params });
+  }
+
+  getById(id: string): Observable<ApiResponse<CatalogProductDetail>> {
+    return this.http.get<ApiResponse<CatalogProductDetail>>(`${this.baseUrl}/${id}`);
   }
 
   search(params: CatalogSearchParams): Observable<ApiResponse<CatalogProduct[]>> {

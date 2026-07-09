@@ -25,6 +25,10 @@ spring:
     host: localhost
     port: 1025
 
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
 axon:
   axonserver:
     servers: localhost:8124

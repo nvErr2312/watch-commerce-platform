@@ -38,6 +38,9 @@
         @if (userMenuOpen()) {
           <div class="dropdown" role="menu">
             <a role="menuitem" routerLink="/profile" (click)="closeUserMenu()">Thông tin cá nhân</a>
+            @if (isAdmin()) {
+              <a role="menuitem" routerLink="/admin/products" (click)="closeUserMenu()">Admin Console</a>
+            }
             <button role="menuitem" type="button" (click)="logout()" [disabled]="loggingOut()">
               {{ loggingOut() ? 'Đang đăng xuất...' : 'Đăng xuất' }}
             </button>

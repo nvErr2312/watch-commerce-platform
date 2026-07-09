@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -36,12 +37,47 @@ export const routes: Routes = [
       import('./features/products/product-detail.page').then((m) => m.ProductDetailPage),
   },
   {
-    // TODO: swap authGuard for an admin-role guard once role claims are
-    // exposed on the token - right now any logged-in user can reach this.
-    path: 'admin/products',
-    canActivate: [authGuard],
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
     loadComponent: () =>
-      import('./features/admin/products/product-management.page').then((m) => m.ProductManagementPage),
+      import('./features/admin/shell/admin-shell.component').then((m) => m.AdminShellComponent),
+    children: [
+      { path: '', redirectTo: 'products', pathMatch: 'full' },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/admin/dashboard/dashboard.page').then((m) => m.DashboardPage),
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./features/admin/products/product-management.page').then((m) => m.ProductManagementPage),
+      },
+      {
+        path: 'customers',
+        data: { title: 'Khách hàng' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'logistics',
+        data: { title: 'Vận chuyển' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'revenue',
+        data: { title: 'Doanh thu' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'security',
+        data: { title: 'Bảo mật' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+    ],
   },
   {
     path: 'profile',

@@ -15,6 +15,7 @@ export class HomePage {
 
   protected readonly loggingOut = signal(false);
   protected readonly userMenuOpen = signal(false);
+  protected readonly isAdmin = this.auth.isAdmin;
 
   protected toggleUserMenu(): void {
     this.userMenuOpen.update((open) => !open);

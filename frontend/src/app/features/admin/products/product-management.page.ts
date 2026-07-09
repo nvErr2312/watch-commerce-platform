@@ -1,7 +1,33 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { InventoryAdminApiService } from '../../../core/api/inventory/inventory-admin-api.service';
 import { ProductSummary, ProductsApiService } from '../../../core/api/products/products-api.service';
+
+type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
+
+const LOW_STOCK_THRESHOLD = 5;
+
+function stockStatus(quantity: number | undefined): StockStatus {
+  if (quantity === undefined) {
+    return 'unknown';
+  }
+  if (quantity <= 0) {
+    return 'out-of-stock';
+  }
+  if (quantity <= LOW_STOCK_THRESHOLD) {
+    return 'low-stock';
+  }
+  return 'in-stock';
+}
+
+const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
+  'in-stock': 'Còn Hàng',
+  'low-stock': 'Sắp Hết',
+  'out-of-stock': 'Hết Hàng',
+  unknown: 'Chưa Rõ',
+};
 
 interface ProductForm {
   name: FormControl<string>;
@@ -23,8 +49,10 @@ const PAGE_SIZE = 3;
 })
 export class ProductManagementPage {
   private readonly api = inject(ProductsApiService);
+  private readonly inventoryApi = inject(InventoryAdminApiService);
 
   protected readonly products = signal<ProductSummary[]>([]);
+  protected readonly stockByProductId = signal<Map<string, number>>(new Map());
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly searchTerm = signal('');
@@ -75,9 +103,10 @@ export class ProductManagementPage {
   protected reload(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.api.list().subscribe({
-      next: (response) => {
-        this.products.set(response.data);
+    forkJoin({ products: this.api.list(), inventory: this.inventoryApi.list() }).subscribe({
+      next: ({ products, inventory }) => {
+        this.products.set(products.data);
+        this.stockByProductId.set(new Map(inventory.data.map((item) => [item.productId, item.availableQuantity])));
         this.loading.set(false);
         this.page.set(0);
       },
@@ -86,6 +115,18 @@ export class ProductManagementPage {
         this.loading.set(false);
       },
     });
+  }
+
+  protected stockOf(productId: string): number | undefined {
+    return this.stockByProductId().get(productId);
+  }
+
+  protected stockStatusOf(productId: string): StockStatus {
+    return stockStatus(this.stockOf(productId));
+  }
+
+  protected stockLabelOf(productId: string): string {
+    return STOCK_STATUS_LABEL[this.stockStatusOf(productId)];
   }
 
   protected onSearchChange(value: string): void {

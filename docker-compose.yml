@@ -1,4 +1,22 @@
 services:
+  axon-server:
+    image: axoniq/axonserver
+    container_name: axon-server
+    ports:
+      - "8024:8024"   # Axon Server dashboard (HTTP)
+      - "8124:8124"   # gRPC - client connection port used by all services
+    environment:
+      - AXONIQ_AXONSERVER_STANDALONE=true
+    volumes:
+      - axon-data:/axonserver/data
+      - axon-events:/axonserver/events
+      - axon-log:/axonserver/log
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8024/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   mysql:
     image: mysql:8.4
     container_name: watch-mysql
@@ -74,18 +92,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
-  axonserver:
-    image: axoniq/axonserver:2024.0.4
-    container_name: watch-axonserver
-    hostname: watch-axonserver
-    restart: unless-stopped
-    ports:
-      - "8124:8124"
-      - "8024:8024"
-    volumes:
-      - axon_data:/axonserver/data
-      - axon_events:/axonserver/events
-
   discoveryserver:
     build:
       context: ./discoveryserver
@@ -96,7 +102,8 @@ services:
       - "8761:8761"
 
 volumes:
+  axon-data:
+  axon-events:
+  axon-log:
   mysql_data:
   postgres_data:
-  axon_data:
-  axon_events:

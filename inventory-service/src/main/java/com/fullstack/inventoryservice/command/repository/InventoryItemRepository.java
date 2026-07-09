@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
+public interface InventoryItemRepository extends JpaRepository<InventoryItem, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select item from InventoryItem item where item.productId = :productId")
-    Optional<InventoryItem> findByIdForUpdate(@Param("productId") Long productId);
+    Optional<InventoryItem> findByIdForUpdate(@Param("productId") String productId);
 }

@@ -13,7 +13,7 @@ import lombok.Setter;
 @Table(name = "inventory_items")
 public class InventoryItem {
     @Id
-    private Long productId;
+    private String productId;
 
     @Column(nullable = false)
     private int availableQuantity;

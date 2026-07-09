@@ -77,52 +77,7 @@ spring:
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/v1/orders/**
-          filters:
-            - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
-            - name: JwtHeaderFilter
-
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                redis-rate-limiter.requestedTokens: 1
-
-        # =====================================================
-        # Payment Service
-        # /api/v1/payments/** -> /payments/**
-        # =====================================================
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/v1/payments/**
-          filters:
-            - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
-            - name: JwtHeaderFilter
-
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                redis-rate-limiter.requestedTokens: 1
-
-        # =====================================================
-        # Shipping Service
-        # /api/v1/shipping/** -> /shipping/**
-        # =====================================================
-        - id: shipping-service
-          uri: lb://shipping-service
-          predicates:
-            - Path=/api/v1/shipping/**
-          filters:
-            - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
-            - name: JwtHeaderFilter
-
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                redis-rate-limiter.requestedTokens: 1
+            - Path=/api/orders/**
 
 eureka:
   instance:

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderItemPayload {
-    private Long productId;
+    private String productId;
     private int quantity;
     private BigDecimal unitPrice;
 }

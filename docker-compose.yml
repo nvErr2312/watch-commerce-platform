@@ -42,26 +42,19 @@ services:
       - "8081:8081"
     environment:
       IDENTITY_SERVICE_PORT: 8081
-
       REDIS_HOST: redis
       REDIS_PORT: 6379
-
       AXON_SERVER_SERVERS: axonserver:8124
-
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_GROUP_ID: identity-service
       EMAIL_VERIFICATION_TOPIC: email-verification
-
       EUREKA_INSTANCE_HOSTNAME: identity-service
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
-
       IDENTITY_SERVICE_URL: http://localhost:8080/api/v1
       FRONTEND_LOGIN_URL: http://localhost:4200/login
-
       ACCESS_TOKEN_MINUTES: 5
       REFRESH_TOKEN_DAYS: 7
       EMAIL_VERIFICATION_TTL_MINUTES: 30
-
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-488480628324-uv5dt3j8rsf7ud80n1ok3tgek2be5t4b.apps.googleusercontent.com}
@@ -105,12 +98,9 @@ services:
       - "8082:8082"
     environment:
       USER_SERVICE_PORT: 8082
-
       AXON_SERVER_SERVERS: axonserver:8124
-
       EUREKA_INSTANCE_HOSTNAME: user-service
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
-
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
     depends_on:
@@ -168,4 +158,3 @@ services:
 networks:
   microservice-network:
     driver: bridge
-

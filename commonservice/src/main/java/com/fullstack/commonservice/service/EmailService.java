@@ -55,7 +55,7 @@ public class EmailService {
 
         }catch (MessagingException e){
             log.error("Failed to send email to {}",to,e);
-            // Handle the exception (retry logic, save to dlq...)
+            throw new IllegalStateException("Failed to send email to " + to, e);
         }
     }
 
@@ -91,6 +91,7 @@ public class EmailService {
 
         }catch (MessagingException | IOException | TemplateException e ){
             log.error("Failed to send email to {}",to,e);
+            throw new IllegalStateException("Failed to send email to " + to, e);
         }
     }
 }

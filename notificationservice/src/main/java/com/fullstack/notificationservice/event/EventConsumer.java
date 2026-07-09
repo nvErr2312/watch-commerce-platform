@@ -35,6 +35,7 @@ public class EventConsumer {
     @KafkaListener(topics = "${app.kafka.topics.email-verification}", containerFactory = "kafkaListenerContainerFactory")
     public void sendVerificationEmail(String message) throws JsonProcessingException {
         EmailVerificationRequestedEvent event = objectMapper.readValue(message, EmailVerificationRequestedEvent.class);
+        log.info("Received email verification request for {}", event.email());
         String html = """
                 <div>
                     <h2>Xac thuc tai khoan</h2>

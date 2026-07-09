@@ -24,6 +24,12 @@ export const routes: Routes = [
       import('./features/home/home.page').then((m) => m.HomePage),
   },
   {
+    path: 'products',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/products/product-list.page').then((m) => m.ProductListPage),
+  },
+  {
     // TODO: swap authGuard for an admin-role guard once role claims are
     // exposed on the token - right now any logged-in user can reach this.
     path: 'admin/products',

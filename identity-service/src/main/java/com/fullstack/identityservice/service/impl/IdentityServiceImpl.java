@@ -66,11 +66,18 @@ public class IdentityServiceImpl implements IdentityService {
     private String emailVerificationTopic;
 
     @Override
+    @Transactional
     public RegisterResponse register(RegisterRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         String username = request.getUsername().trim().toLowerCase();
         rateLimitService.check("rate:register:" + email, 5, 3600);
-        if (accountRepository.existsByEmail(email)) {
+
+        Account existingAccount = accountRepository.findByEmail(email).orElse(null);
+        if (existingAccount != null) {
+            if (existingAccount.getStatus() == AccountStatus.PENDING) {
+                resendVerificationEmail(existingAccount);
+                return registerResponse(existingAccount, username);
+            }
             throw new IllegalArgumentException("Email already registered");
         }
 
@@ -100,13 +107,7 @@ public class IdentityServiceImpl implements IdentityService {
             String verificationLink = createVerificationLink(account.getId());
             sendVerificationEmail(account.getEmail(), verificationLink);
 
-            return RegisterResponse.builder()
-                    .accountId(account.getId())
-                    .userId(account.getUserId())
-                    .email(account.getEmail())
-                    .username(username)
-                    .status(account.getStatus().name())
-                    .build();
+            return registerResponse(account, username);
         } catch (RuntimeException exception) {
             if (account != null && account.getId() != null) {
                 accountRepository.deleteById(account.getId());
@@ -204,6 +205,21 @@ public class IdentityServiceImpl implements IdentityService {
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Could not create email verification message", exception);
         }
+    }
+
+    private void resendVerificationEmail(Account account) {
+        String verificationLink = createVerificationLink(account.getId());
+        sendVerificationEmail(account.getEmail(), verificationLink);
+    }
+
+    private RegisterResponse registerResponse(Account account, String username) {
+        return RegisterResponse.builder()
+                .accountId(account.getId())
+                .userId(account.getUserId())
+                .email(account.getEmail())
+                .username(username)
+                .status(account.getStatus().name())
+                .build();
     }
 
     private Account createGoogleAccount(GoogleUserInfo googleUser) {

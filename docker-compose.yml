@@ -1,102 +1,171 @@
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: watch-mysql
+  discoveryserver:
+    build:
+      context: .
+      dockerfile: discoveryserver/Dockerfile
+    container_name: discoveryserver
+    hostname: discoveryserver
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: 11111111
-      MYSQL_DATABASE: watch_commerce_db
     ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p11111111"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - "8761:8761"
+    networks:
+      - microservice-network
 
-  postgres:
-    image: postgres:16
-    container_name: watch-postgres
+  apigateway:
+    build:
+      context: .
+      dockerfile: apigateway/Dockerfile
+    container_name: apigateway
+    hostname: apigateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_INSTANCE_HOSTNAME: apigateway
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+    depends_on:
+      - discoveryserver
+      - redis
+    networks:
+      - microservice-network
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+    container_name: identity-service
+    hostname: identity-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      IDENTITY_SERVICE_PORT: 8081
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      AXON_SERVER_SERVERS: axonserver:8124
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_ID: identity-service
+      EMAIL_VERIFICATION_TOPIC: email-verification
+
+      EUREKA_INSTANCE_HOSTNAME: identity-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+
+      IDENTITY_SERVICE_URL: http://localhost:8080/api/v1
+      FRONTEND_LOGIN_URL: http://localhost:4200/login
+
+      ACCESS_TOKEN_MINUTES: 5
+      REFRESH_TOKEN_DAYS: 7
+      EMAIL_VERIFICATION_TTL_MINUTES: 30
+
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-488480628324-uv5dt3j8rsf7ud80n1ok3tgek2be5t4b.apps.googleusercontent.com}
+    depends_on:
+      - discoveryserver
+      - redis
+      - axonserver
+      - kafka
+    networks:
+      - microservice-network
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: notificationservice/Dockerfile
+    container_name: notificationservice
+    hostname: notificationservice
+    restart: unless-stopped
+    ports:
+      - "9004:9004"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_ID: fullstack
+      EMAIL_VERIFICATION_TOPIC: email-verification
+      AXON_SERVER_SERVERS: axonserver:8124
+      FRONTEND_LOGIN_URL: http://localhost:4200/login
+    depends_on:
+      - kafka
+      - axonserver
+    networks:
+      - microservice-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    hostname: user-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      USER_SERVICE_PORT: 8082
+
+      AXON_SERVER_SERVERS: axonserver:8124
+
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  axonserver:
+    image: axoniq/axonserver:latest
+    container_name: axonserver
+    hostname: axonserver
     restart: unless-stopped
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 11111111
+      AXONIQ_AXONSERVER_STANDALONE: "TRUE"
     ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - "8024:8024"
+      - "8124:8124"
+      - "8224:8224"
+    networks:
+      - microservice-network
 
   redis:
-    image: redis:7.2
-    container_name: watch-redis
-    restart: unless-stopped
+    image: redis:latest
+    container_name: redis
+    hostname: redis
+    restart: always
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  mailpit:
-    image: axllent/mailpit
-    container_name: watch-mailpit
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
+    networks:
+      - microservice-network
 
   kafka:
     image: apache/kafka:3.7.0
     container_name: watch-kafka
+    hostname: kafka
     restart: unless-stopped
     ports:
-      - "9092:9092"
+      - "9092:29092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - microservice-network
 
-  axonserver:
-    image: axoniq/axonserver:2024.0.4
-    container_name: watch-axonserver
-    hostname: watch-axonserver
-    restart: unless-stopped
-    ports:
-      - "8124:8124"
-      - "8024:8024"
-    volumes:
-      - axon_data:/axonserver/data
-      - axon_events:/axonserver/events
+networks:
+  microservice-network:
+    driver: bridge
 
-  discoveryserver:
-    build:
-      context: ./discoveryserver
-      dockerfile: Dockerfile
-    container_name: watch-discoveryserver
-    restart: unless-stopped
-    ports:
-      - "8761:8761"
-
-volumes:
-  mysql_data:
-  postgres_data:
-  axon_data:
-  axon_events:

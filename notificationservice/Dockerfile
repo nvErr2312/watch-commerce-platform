@@ -27,5 +27,5 @@ WORKDIR /app
 # Lấy thành phẩm từ bước build chuyển sang
 COPY --from=build /app/notificationservice/target/*.jar notificationservice.jar
 
-EXPOSE 9003
+EXPOSE 9004
 ENTRYPOINT ["java", "-jar", "notificationservice.jar"]

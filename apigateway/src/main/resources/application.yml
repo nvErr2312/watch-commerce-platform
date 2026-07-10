@@ -38,6 +38,14 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/api/orders/**
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/payos/webhook,/api/payments/payos/return,/api/payments/payos/cancel
 
 eureka:
   instance:

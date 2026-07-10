@@ -82,6 +82,23 @@ spring:
           uri: lb://payment-service
           predicates:
             - Path=/api/payments/payos/webhook,/api/payments/payos/return,/api/payments/payos/cancel
+        # =====================================================
+        # Product Service
+        # /api/products/** -> /products/**
+        # =====================================================
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+
+
 
 eureka:
   instance:

@@ -1,26 +1,24 @@
 server:
-  port: 8090
+  port: ${SERVER_PORT:8090}
 
 spring:
   application:
-    name: admin-service
+    name: ${APP_NAME:admin-service}
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: admin-service
-  mail:
-    host: localhost
-    port: 1025
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:admin-service}
 
 app:
   security:
+    # Biến này đã được bọc sẵn từ trước
     jwt-secret: ${JWT_SECRET:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
 
 axon:
   axonserver:
-    servers: localhost:8124
-    client-id: admin-service
-    component-name: admin-service
+    servers: ${AXON_SERVERS:localhost:8124}
+    client-id: ${APP_NAME:admin-service}
+    component-name: ${APP_NAME:admin-service}
   serializer:
     general: jackson
     messages: jackson
@@ -28,7 +26,7 @@ axon:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
   instance:
     prefer-ip-address: true
 
@@ -36,18 +34,18 @@ resilience4j:
   circuitbreaker:
     instances:
       productService:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-size: ${CB_PRODUCT_WINDOW_SIZE:10}
+        failure-rate-threshold: ${CB_PRODUCT_FAILURE_RATE:50}
+        wait-duration-in-open-state: ${CB_PRODUCT_WAIT_DURATION:10s}
+        permitted-number-of-calls-in-half-open-state: ${CB_PRODUCT_PERMITTED_CALLS:3}
       inventoryService:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-size: ${CB_INVENTORY_WINDOW_SIZE:10}
+        failure-rate-threshold: ${CB_INVENTORY_FAILURE_RATE:50}
+        wait-duration-in-open-state: ${CB_INVENTORY_WAIT_DURATION:10s}
+        permitted-number-of-calls-in-half-open-state: ${CB_INVENTORY_PERMITTED_CALLS:3}
   timelimiter:
     instances:
       productService:
-        timeout-duration: 3s
+        timeout-duration: ${TL_PRODUCT_TIMEOUT:3s}
       inventoryService:
-        timeout-duration: 3s
+        timeout-duration: ${TL_INVENTORY_TIMEOUT:3s}

@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class MockShippingController {
+public class ShippingFeeController {
     private final ShippingFeeRuleRepository repository;
 
-    @GetMapping("/api/mock/shipping-fees")
+    @GetMapping("/api/shipping/fees")
     public List<ShippingFeeRule> shippingFees() {
         return repository.findAll();
     }

@@ -1,0 +1,199 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #e4e2e4;
+  background: #131315;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+// Typography Classes
+.font-headline-md {
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+
+.font-headline-sm {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+}
+
+.font-label-md {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.font-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.font-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+// Colors & Decorators
+.text-tertiary {
+  color: #e9c176;
+}
+
+.text-on-surface {
+  color: #e4e2e4;
+}
+
+.text-on-surface-variant {
+  color: #c7c6ca;
+}
+
+.decoration-none {
+  text-decoration: none;
+}
+
+// Layout styles
+.checkout-layout {
+  min-height: 100vh;
+  background: #131315;
+}
+
+.max-w-container-max {
+  max-width: 1280px;
+}
+
+.px-margin-desktop {
+  padding-left: 60px;
+  padding-right: 60px;
+}
+
+.px-margin-mobile {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+// Form validation
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-error {
+  color: #ffb4ab;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// Inputs & Selects
+.input-ghost {
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e4e2e4;
+  outline: none;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #e9c176;
+    box-shadow: 0 0 0 1px rgba(233, 193, 118, 0.3);
+  }
+
+  &::placeholder {
+    color: #666;
+  }
+}
+
+select.input-ghost {
+  cursor: pointer;
+  
+  option {
+    background-color: #131315;
+    color: #e4e2e4;
+  }
+}
+
+// Buttons
+.btn-primary {
+  background-color: #C5A059;
+  color: #0A0A0B;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
+    opacity: 0.95;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Glassmorphism Card
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+// Progress line tracker
+.progress-line-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+// Shipping method cards
+.shipping-option {
+  &:hover {
+    border-color: rgba(233, 193, 118, 0.5);
+  }
+}
+
+// Alert styles
+.bg-error-container {
+  background-color: #3f0003;
+}
+
+.text-on-error-container {
+  color: #ffdad6;
+}
+
+.border-error\/20 {
+  border-color: rgba(255, 180, 171, 0.2);
+}
+
+.text-error {
+  color: #ffb4ab;
+}
+
+// Spinner animation
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+// Responsive layout rules
+@media (max-width: 991px) {
+  .px-margin-desktop {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

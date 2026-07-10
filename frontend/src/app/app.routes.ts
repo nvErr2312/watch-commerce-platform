@@ -24,24 +24,10 @@ export const routes: Routes = [
       import('./features/home/home.page').then((m) => m.HomePage),
   },
   {
-    path: 'products',
+    path: 'checkout',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/products/product-list.page').then((m) => m.ProductListPage),
-  },
-  {
-    path: 'products/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/products/product-detail.page').then((m) => m.ProductDetailPage),
-  },
-  {
-    // TODO: swap authGuard for an admin-role guard once role claims are
-    // exposed on the token - right now any logged-in user can reach this.
-    path: 'admin/products',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/admin/products/product-management.page').then((m) => m.ProductManagementPage),
+      import('./features/checkout/checkout.page').then((m) => m.CheckoutPage),
   },
   {
     path: 'profile',
@@ -50,3 +36,4 @@ export const routes: Routes = [
       import('./features/profile/profile.page').then((m) => m.ProfilePage),
   },
 ];
+

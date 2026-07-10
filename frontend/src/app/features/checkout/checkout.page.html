@@ -1,0 +1,363 @@
+<div class="checkout-layout min-h-screen flex flex-col bg-background text-on-background">
+  <!-- Minimised Header -->
+  <header class="w-full py-8 px-margin-mobile md:px-margin-desktop flex justify-center items-center border-b border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-20">
+    <a class="font-headline-md text-headline-md tracking-tighter text-on-surface text-tertiary decoration-none" routerLink="/home">HOROLOGUE</a>
+  </header>
+
+  <main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-12 md:py-20 relative">
+    
+    <!-- Loading Overlay for Order Creation or Polling -->
+    @if (orderLoading() || pollingOrder()) {
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md flex flex-col justify-center items-center z-50 rounded-xl min-h-[500px]">
+        <div class="relative w-20 h-20 mb-6">
+          <div class="absolute inset-0 rounded-full border-4 border-white/10"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-t-tertiary animate-spin"></div>
+        </div>
+        @if (orderLoading()) {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Đang tạo đơn hàng...</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">Hệ thống đang chuẩn bị thông tin thanh toán của bạn.</p>
+        } @else if (pollingOrder()) {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Đang kết nối với PayOS...</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant text-center max-w-md px-4">
+            Vui lòng chờ giây lát. Bạn sẽ được tự động chuyển hướng đến cổng thanh toán ngân hàng qua mã QR PayOS.
+          </p>
+        }
+      </div>
+    }
+
+    <!-- Checkout Steps Progress Tracker -->
+    <div class="w-full max-w-3xl mx-auto mb-16">
+      <div class="flex items-center justify-between relative">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[1px] bg-white/10 -z-10"></div>
+        
+        <!-- Step 1: Info -->
+        <div class="flex flex-col items-center gap-2 bg-background px-4">
+          <div class="w-2.5 h-2.5 rounded-full" [class.bg-tertiary]="currentStep() === 'info' || currentStep() === 'shipping' || currentStep() === 'payment'" [class.bg-white/20]="currentStep() !== 'info' && currentStep() !== 'shipping' && currentStep() !== 'payment'"></div>
+          <span class="font-label-md text-label-md uppercase tracking-widest" [class.text-tertiary]="currentStep() === 'info'" [class.text-on-surface]="currentStep() === 'shipping' || currentStep() === 'payment'" [class.text-on-surface-variant]="currentStep() !== 'info' && currentStep() !== 'shipping' && currentStep() !== 'payment'">Thông tin</span>
+        </div>
+
+        <!-- Step 2: Shipping -->
+        <div class="flex flex-col items-center gap-2 bg-background px-4">
+          <div class="w-2.5 h-2.5 rounded-full" [class.bg-tertiary]="currentStep() === 'shipping' || currentStep() === 'payment'" [class.bg-white/20]="currentStep() !== 'shipping' && currentStep() !== 'payment'"></div>
+          <span class="font-label-md text-label-md uppercase tracking-widest" [class.text-tertiary]="currentStep() === 'shipping'" [class.text-on-surface]="currentStep() === 'payment'" [class.text-on-surface-variant]="currentStep() !== 'shipping' && currentStep() !== 'payment'">Vận chuyển</span>
+        </div>
+
+        <!-- Step 3: Payment -->
+        <div class="flex flex-col items-center gap-2 bg-background px-4">
+          <div class="w-2.5 h-2.5 rounded-full" [class.bg-tertiary]="currentStep() === 'payment'" [class.bg-white/20]="currentStep() !== 'payment'"></div>
+          <span class="font-label-md text-label-md uppercase tracking-widest" [class.text-tertiary]="currentStep() === 'payment'" [class.text-on-surface-variant]="currentStep() !== 'payment'">Thanh toán</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Alerts -->
+    @if (orderError()) {
+      <div class="w-full max-w-3xl mx-auto mb-8 p-4 bg-error-container text-on-error-container border border-error/20 rounded-DEFAULT flex items-center gap-3">
+        <span class="material-symbols-outlined text-error">error</span>
+        <span class="font-body-md text-body-md">{{ orderError() }}</span>
+      </div>
+    }
+
+    <!-- Main Content Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter lg:gap-[80px]">
+      
+      <!-- Left Column: Checkout Form Wizard -->
+      <div class="lg:col-span-7 space-y-10">
+        <form [formGroup]="form" (ngSubmit)="$event.preventDefault()" novalidate>
+          
+          <!-- STEP 1: INFO & ADDRESS -->
+          @if (currentStep() === 'info') {
+            <div class="space-y-10">
+              <!-- Contact Info -->
+              <section>
+                <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Thông tin liên hệ</h2>
+                <div class="space-y-4">
+                  <div class="form-field">
+                    <input formControlName="email" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Email" type="email" autocomplete="email"/>
+                    @if (hasError('email', 'required')) {
+                      <small class="field-error">Vui lòng nhập email.</small>
+                    } @else if (hasError('email', 'email')) {
+                      <small class="field-error">Email không đúng định dạng.</small>
+                    }
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input formControlName="news" class="w-4 h-4 rounded-sm border-white/20 bg-transparent text-tertiary focus:ring-tertiary focus:ring-offset-background" id="news" type="checkbox"/>
+                    <label class="font-body-md text-body-md text-on-surface-variant cursor-pointer select-none" for="news">Nhận tin tức và ưu đãi độc quyền qua email</label>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Shipping Address -->
+              <section>
+                <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Địa chỉ giao hàng</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="form-field">
+                    <input formControlName="lastName" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Họ" type="text"/>
+                    @if (hasError('lastName', 'required')) {
+                      <small class="field-error">Vui lòng nhập họ.</small>
+                    }
+                  </div>
+                  <div class="form-field">
+                    <input formControlName="firstName" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Tên" type="text"/>
+                    @if (hasError('firstName', 'required')) {
+                      <small class="field-error">Vui lòng nhập tên.</small>
+                    }
+                  </div>
+                  <div class="md:col-span-2 form-field">
+                    <input formControlName="company" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Công ty (tùy chọn)" type="text"/>
+                  </div>
+                  <div class="md:col-span-2 form-field">
+                    <input formControlName="address" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Địa chỉ" type="text"/>
+                    @if (hasError('address', 'required')) {
+                      <small class="field-error">Vui lòng nhập địa chỉ giao hàng.</small>
+                    }
+                  </div>
+                  <div class="md:col-span-2 form-field">
+                    <input formControlName="apartment" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Căn hộ, dãy phòng, v.v. (tùy chọn)" type="text"/>
+                  </div>
+                  <div class="form-field">
+                    <input formControlName="postalCode" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Mã bưu điện" type="text"/>
+                    @if (hasError('postalCode', 'required')) {
+                      <small class="field-error">Vui lòng nhập mã bưu điện.</small>
+                    }
+                  </div>
+                  <div class="form-field">
+                    <input formControlName="city" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Thành phố" type="text"/>
+                    @if (hasError('city', 'required')) {
+                      <small class="field-error">Vui lòng nhập thành phố.</small>
+                    }
+                  </div>
+                  <div class="md:col-span-2 form-field relative">
+                    <select formControlName="country" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md appearance-none">
+                      <option value="VN">Việt Nam</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+                  </div>
+                  <div class="md:col-span-2 form-field">
+                    <input formControlName="phone" class="input-ghost w-full px-4 py-4 rounded-DEFAULT font-body-md text-body-md" placeholder="Số điện thoại" type="tel"/>
+                    @if (hasError('phone', 'required')) {
+                      <small class="field-error">Vui lòng nhập số điện thoại.</small>
+                    } @else if (hasError('phone', 'pattern')) {
+                      <small class="field-error">Số điện thoại không hợp lệ.</small>
+                    }
+                  </div>
+                </div>
+              </section>
+
+              <!-- Footer Navigation -->
+              <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <a class="font-label-md text-label-md text-on-surface-variant hover:text-tertiary transition-colors flex items-center gap-2 decoration-none" routerLink="/home">
+                  <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back_ios</span>
+                  Quay lại giỏ hàng
+                </a>
+                <button type="button" (click)="nextStep()" class="btn-primary w-full sm:w-auto px-8 py-4 rounded-DEFAULT font-label-md text-label-md uppercase tracking-widest cursor-pointer border-0">
+                  Tiếp tục đến Phương thức vận chuyển
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 2: SHIPPING METHOD -->
+          @if (currentStep() === 'shipping') {
+            <div class="space-y-10">
+              <section>
+                <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Phương thức vận chuyển</h2>
+                <div class="space-y-4">
+                  <!-- Standard option -->
+                  <div class="shipping-option flex justify-between items-center p-6 border rounded-DEFAULT cursor-pointer transition-all" 
+                       [class.border-tertiary]="selectedShippingMethod() === 'standard'"
+                       [class.bg-white/5]="selectedShippingMethod() === 'standard'"
+                       [class.border-white/10]="selectedShippingMethod() !== 'standard'"
+                       (click)="setShippingMethod('standard')">
+                    <div class="flex items-center gap-4">
+                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                           [class.border-tertiary]="selectedShippingMethod() === 'standard'"
+                           [class.border-white/20]="selectedShippingMethod() !== 'standard'">
+                        @if (selectedShippingMethod() === 'standard') {
+                          <div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
+                        }
+                      </div>
+                      <div>
+                        <h4 class="font-label-md text-label-md text-on-surface mb-1">Giao hàng tiêu chuẩn</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant">Dự kiến nhận hàng trong 3-5 ngày làm việc</p>
+                      </div>
+                    </div>
+                    <span class="font-label-md text-label-md text-on-surface">30,000 ₫</span>
+                  </div>
+
+                  <!-- Express option -->
+                  <div class="shipping-option flex justify-between items-center p-6 border rounded-DEFAULT cursor-pointer transition-all" 
+                       [class.border-tertiary]="selectedShippingMethod() === 'express'"
+                       [class.bg-white/5]="selectedShippingMethod() === 'express'"
+                       [class.border-white/10]="selectedShippingMethod() !== 'express'"
+                       (click)="setShippingMethod('express')">
+                    <div class="flex items-center gap-4">
+                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                           [class.border-tertiary]="selectedShippingMethod() === 'express'"
+                           [class.border-white/20]="selectedShippingMethod() !== 'express'">
+                        @if (selectedShippingMethod() === 'express') {
+                          <div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
+                        }
+                      </div>
+                      <div>
+                        <h4 class="font-label-md text-label-md text-on-surface mb-1">Giao hàng hỏa tốc</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant">Dự kiến nhận hàng trong 24h làm việc</p>
+                      </div>
+                    </div>
+                    <span class="font-label-md text-label-md text-on-surface">100,000 ₫</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Footer Navigation -->
+              <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <button type="button" (click)="prevStep()" class="font-label-md text-label-md text-on-surface-variant hover:text-tertiary transition-colors flex items-center gap-2 decoration-none bg-transparent border-0 cursor-pointer">
+                  <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back_ios</span>
+                  Quay lại thông tin liên hệ
+                </button>
+                <button type="button" (click)="nextStep()" class="btn-primary w-full sm:w-auto px-8 py-4 rounded-DEFAULT font-label-md text-label-md uppercase tracking-widest cursor-pointer border-0">
+                  Tiếp tục đến Phương thức thanh toán
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 3: PAYMENT METHOD -->
+          @if (currentStep() === 'payment') {
+            <div class="space-y-10">
+              <section>
+                <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Phương thức thanh toán</h2>
+                
+                <div class="space-y-4">
+                  <!-- PayOS gateway option -->
+                  <div class="payment-option p-6 border border-tertiary bg-white/5 rounded-DEFAULT">
+                    <div class="flex items-center gap-4 mb-4">
+                      <div class="w-5 h-5 rounded-full border-2 border-tertiary flex items-center justify-center">
+                        <div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
+                      </div>
+                      <div class="flex-grow">
+                        <h4 class="font-label-md text-label-md text-on-surface">Thanh toán qua chuyển khoản QR (PayOS)</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant">Quét mã QR để hoàn tất thanh toán tức thời</p>
+                      </div>
+                      <div class="logo-payos flex items-center justify-center px-3 py-1 bg-white rounded-sm">
+                        <span class="text-on-secondary-fixed font-bold tracking-widest font-caption text-caption">PayOS</span>
+                      </div>
+                    </div>
+                    <div class="p-4 bg-black/30 border border-white/5 rounded-sm text-on-surface-variant font-body-md text-body-md">
+                      Sau khi nhấp vào "Hoàn tất đặt hàng", hệ thống sẽ khởi tạo và chuyển bạn sang cổng PayOS để quét mã QR thanh toán bằng App Ngân hàng của bạn.
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Footer Navigation -->
+              <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <button type="button" (click)="prevStep()" class="font-label-md text-label-md text-on-surface-variant hover:text-tertiary transition-colors flex items-center gap-2 decoration-none bg-transparent border-0 cursor-pointer">
+                  <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back_ios</span>
+                  Quay lại phương thức vận chuyển
+                </button>
+                <button type="button" (click)="submitOrder()" class="btn-primary w-full sm:w-auto px-8 py-4 rounded-DEFAULT font-label-md text-label-md uppercase tracking-widest cursor-pointer border-0">
+                  Hoàn tất đặt hàng
+                </button>
+              </div>
+            </div>
+          }
+
+        </form>
+      </div>
+
+      <!-- Right Column: Order Summary Glass Card -->
+      <div class="lg:col-span-5 relative mt-12 lg:mt-0">
+        <!-- Glow Backlight -->
+        <div class="absolute -inset-4 bg-tertiary/5 rounded-[2rem] blur-3xl -z-10"></div>
+        
+        <div class="glass-panel rounded-xl p-6 md:p-8 sticky top-8">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface mb-8">Tóm tắt đơn hàng</h2>
+          
+          <!-- Item List -->
+          <div class="space-y-6 mb-8 max-h-[300px] overflow-y-auto pr-1">
+            @for (item of cartItems(); track item.id) {
+              <div class="flex gap-4 items-center">
+                <div class="relative w-20 h-20 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0 border border-white/5">
+                  <img class="w-full h-full object-cover p-2 mix-blend-screen" [src]="item.image" [alt]="item.description"/>
+                  <span class="absolute -top-2 -right-2 bg-surface-variant text-on-surface font-caption text-caption w-6 h-6 flex items-center justify-center rounded-full border border-white/10 z-10">{{ item.quantity }}</span>
+                </div>
+                <div class="flex-grow">
+                  <h3 class="font-label-md text-label-md text-on-surface">{{ item.name }}</h3>
+                  <p class="font-body-md text-body-md text-on-surface-variant">{{ item.description }}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="font-body-md text-body-md text-on-surface">{{ item.price | number:'1.0-0' }} ₫</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Discount Code Input -->
+          <div class="mb-8 py-6 border-y border-white/10">
+            <div class="flex gap-2">
+              <input #promoInput [value]="promoCodeInput()" (input)="promoCodeInput.set(promoInput.value)" class="input-ghost flex-grow px-4 py-3 rounded-DEFAULT font-body-md text-body-md" placeholder="Mã giảm giá" type="text" (keyup.enter)="applyPromoCode()"/>
+              <button type="button" (click)="applyPromoCode()" class="bg-surface-variant text-on-surface hover:bg-surface-bright transition-colors px-6 py-3 rounded-DEFAULT font-label-md text-label-md border border-white/10 cursor-pointer">
+                Áp dụng
+              </button>
+            </div>
+            @if (promoSuccess()) {
+              <p class="text-tertiary text-caption font-caption mt-2">{{ promoSuccess() }}</p>
+            }
+            @if (promoError()) {
+              <p class="text-error text-caption font-caption mt-2">{{ promoError() }}</p>
+            }
+          </div>
+
+          <!-- Totals Breakdown -->
+          <div class="space-y-4 font-body-md text-body-md text-on-surface-variant">
+            <div class="flex justify-between">
+              <span>Tạm tính</span>
+              <span class="text-on-surface">{{ subtotal() | number:'1.0-0' }} ₫</span>
+            </div>
+            
+            @if (promoDiscount() > 0) {
+              <div class="flex justify-between text-tertiary">
+                <span>Giảm giá ({{ appliedPromoCode() }})</span>
+                <span>- {{ promoDiscount() | number:'1.0-0' }} ₫</span>
+              </div>
+            }
+
+            <div class="flex justify-between">
+              <span>Vận chuyển</span>
+              <span class="text-on-surface">
+                @if (currentStep() === 'info') {
+                  Tính ở bước tiếp theo
+                } @else {
+                  {{ shippingFee() | number:'1.0-0' }} ₫
+                }
+              </span>
+            </div>
+
+            <!-- Grand Total -->
+            <div class="pt-4 mt-4 border-t border-white/10 flex justify-between items-end">
+              <span class="font-headline-sm text-headline-sm text-on-surface">Tổng cộng</span>
+              <div class="text-right">
+                <span class="font-caption text-caption text-on-surface-variant mr-2">VND</span>
+                <span class="font-headline-sm text-headline-sm text-tertiary">{{ totalAmount() | number:'1.0-0' }} ₫</span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Minimal Checkout Footer -->
+  <footer class="w-full py-12 border-t border-outline-variant/10 bg-background text-on-background mt-auto">
+    <div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4">
+      <span class="font-caption text-caption uppercase tracking-widest text-on-surface-variant">© 2026 HOROLOGUE PRESTIGE. ALL RIGHTS RESERVED.</span>
+      <div class="flex gap-6">
+        <a class="font-caption text-caption uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors decoration-none" href="#">Privacy Policy</a>
+        <a class="font-caption text-caption uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors decoration-none" href="#">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+</div>

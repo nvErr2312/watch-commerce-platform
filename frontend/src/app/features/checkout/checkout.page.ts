@@ -1,23 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { AuthStore } from '../../core/auth/auth.store';
+import { CartService } from '../../core/cart/cart.service';
 import { CheckoutApiService, OrderResponse } from '../../core/api/checkout/checkout-api.service';
 import { catchError, map, of, Subscription, interval } from 'rxjs';
 
 interface CheckoutForm {
-  email: FormControl<string>;
-  news: FormControl<boolean>;
-  lastName: FormControl<string>;
-  firstName: FormControl<string>;
-  company: FormControl<string>;
   address: FormControl<string>;
   apartment: FormControl<string>;
-  postalCode: FormControl<string>;
   city: FormControl<string>;
   country: FormControl<string>;
-  phone: FormControl<string>;
 }
 
 @Component({
@@ -29,22 +23,20 @@ interface CheckoutForm {
 })
 
 
-export class CheckoutPage implements OnInit {
+export class CheckoutPage {
   private readonly auth = inject(AuthStore);
+  private readonly cart = inject(CartService);
   private readonly checkoutApi = inject(CheckoutApiService);
   private readonly router = inject(Router);
 
   // Checkout flow state
   protected readonly currentStep = signal<'info' | 'shipping' | 'payment'>('info');
   protected readonly selectedShippingMethod = signal<'standard' | 'express'>('standard');
-  
-  // Promo code state
   protected readonly promoCodeInput = signal('');
   protected readonly appliedPromoCode = signal('');
   protected readonly promoError = signal('');
   protected readonly promoSuccess = signal('');
-  protected readonly promoDiscount = signal(0); // in VND
-
+  protected readonly promoDiscount = signal(0);
   // Order API state
   protected readonly orderLoading = signal(false);
   protected readonly orderError = signal('');
@@ -54,31 +46,29 @@ export class CheckoutPage implements OnInit {
   // Subscriptions
   private pollSubscription?: Subscription;
 
-  // Mock checkout items
-  protected readonly cartItems = signal([
-    {
-      id: 1,
-      name: 'HOROLOGUE',
-      description: 'Bespoke Tourbillon',
-      price: 1250000000,
-      quantity: 1,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFx32SJ7wqbdxsoahbIBZeXIeUTCkjPa7EOIfelwF9JOt8hn2h_4qrSK5TUwsnL6llxXIu_jMfq7QjAFbjQOMB1KO8zzYEkHRQDTtm929k6kjfNik1AxvLAHJ8Tli5C7Ov6XiamZNawCErH03WJf13z9j4boHgBkhayBSw2qifrWc-S7xPy0Q3Unncc4C6Sv-5nPy217zAo-nhKlrn5EXo7WvWAdKwGGbiCN8UDJKYhEdD3WKp6yXtMDLXzIODQ8zVLqiuSsTJRbM'
-    }
-  ]);
+  // Checkout items from CartService
+  protected readonly cartItems = this.cart.items;
+  protected readonly cityOptions = [
+    'Ho Chi Minh',
+    'Ha Noi',
+    'Da Nang',
+    'Hai Phong',
+    'Can Tho',
+    'Binh Duong',
+    'Dong Nai',
+    'Ba Ria Vung Tau',
+    'Hue',
+    'Quang Ninh',
+    'Nha Trang',
+    'Da Lat',
+  ];
 
   // Checkout form group
   protected readonly form = new FormGroup<CheckoutForm>({
-    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
-    news: new FormControl(false, { nonNullable: true }),
-    lastName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    firstName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    company: new FormControl('', { nonNullable: true }),
     address: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     apartment: new FormControl('', { nonNullable: true }),
-    postalCode: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     city: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     country: new FormControl('VN', { nonNullable: true, validators: [Validators.required] }),
-    phone: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^[0-9+ ]{9,15}$/)] }),
   });
 
   // Computed totals
@@ -90,20 +80,15 @@ export class CheckoutPage implements OnInit {
     if (this.currentStep() === 'info') {
       return 0; // Displayed as "Calculated next" in view
     }
-    return this.selectedShippingMethod() === 'express' ? 100000 : 30000;
+    return this.createdOrder()?.shippingFee ?? this.feeForAddress(this.form.getRawValue().city);
   });
 
   protected readonly totalAmount = computed(() => {
-    return this.subtotal() + this.shippingFee() - this.promoDiscount();
-  });
-
-  ngOnInit(): void {
-    // Pre-fill user email if logged in
-    const user = this.auth.currentUser();
-    if (user && user.email) {
-      this.form.patchValue({ email: user.email });
+    if (this.createdOrder()?.totalAmount) {
+      return this.createdOrder()!.totalAmount;
     }
-  }
+    return this.subtotal() + this.shippingFee();
+  });
 
   // Next step handler
   protected nextStep(): void {
@@ -125,11 +110,6 @@ export class CheckoutPage implements OnInit {
     } else if (this.currentStep() === 'payment') {
       this.currentStep.set('shipping');
     }
-  }
-
-  // Change shipping method
-  protected setShippingMethod(method: 'standard' | 'express'): void {
-    this.selectedShippingMethod.set(method);
   }
 
   // Apply discount coupon
@@ -163,6 +143,10 @@ export class CheckoutPage implements OnInit {
     return control.hasError(error) && (control.dirty || control.touched);
   }
 
+  protected setShippingMethod(method: 'standard' | 'express'): void {
+    this.selectedShippingMethod.set(method);
+  }
+
   // Submit order handler
   protected submitOrder(): void {
     if (this.form.invalid) {
@@ -172,7 +156,12 @@ export class CheckoutPage implements OnInit {
     }
 
     const user = this.auth.currentUser();
-    const userId = user ? user.id : 1; // Fallback to 1 if not defined (though guard prevents it)
+    if (!user) {
+      this.orderError.set('Vui lÃ²ng Ä‘Äƒng nháº­p trÆ°á»›c khi Ä‘áº·t hÃ ng.');
+      this.router.navigate(['/login']);
+      return;
+    }
+    const userId = user.id;
 
     const rawValues = this.form.getRawValue();
     // Build clean address string
@@ -225,7 +214,12 @@ export class CheckoutPage implements OnInit {
             // If paymentUrl is available, redirect user to PayOS
             if (order.paymentUrl) {
               this.stopPolling();
+              this.cart.clearCart();
               window.location.href = order.paymentUrl;
+            } else if (order.status === 'CANCELLED') {
+              this.stopPolling();
+              this.pollingOrder.set(false);
+              this.orderError.set('Đơn hàng đã bị hủy (Sản phẩm có thể đã hết hàng hoặc không đủ tồn kho). Vui lòng kiểm tra lại.');
             }
           },
           error: (err) => {
@@ -250,6 +244,12 @@ export class CheckoutPage implements OnInit {
       this.pollSubscription.unsubscribe();
       this.pollSubscription = undefined;
     }
+  }
+
+  private feeForAddress(address: string): number {
+    const value = address.toUpperCase();
+    return ['HCM', 'HO CHI MINH', 'DA NANG', 'BINH DUONG', 'DONG NAI', 'HUE']
+      .some(region => value.includes(region)) ? 1000 : 2000;
   }
 
   ngOnDestroy(): void {

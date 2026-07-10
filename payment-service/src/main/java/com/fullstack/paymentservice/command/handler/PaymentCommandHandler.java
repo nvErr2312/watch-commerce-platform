@@ -33,6 +33,7 @@ public class PaymentCommandHandler {
             record.setPaymentUrl(link.checkoutUrl());
             record.setStatus(PaymentStatus.PENDING.name());
             record.setCreatedAt(Instant.now());
+            record.setExpiresAt(link.expiresAt());
             return repository.save(record);
         });
         eventGateway.publish(new PaymentCreatedEvent(

@@ -24,16 +24,15 @@ export const routes: Routes = [
       import('./features/home/home.page').then((m) => m.HomePage),
   },
   {
-    path: 'checkout',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/checkout/checkout.page').then((m) => m.CheckoutPage),
-  },
-  {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile/profile.page').then((m) => m.ProfilePage),
   },
+  {
+    path: 'checkout',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/checkout/checkout.page').then((m) => m.CheckoutPage),
+  },
 ];
-

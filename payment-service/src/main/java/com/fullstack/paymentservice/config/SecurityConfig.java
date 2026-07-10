@@ -25,6 +25,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) ->
@@ -36,6 +37,7 @@ public class SecurityConfig {
                                 "/api/payments/payos/webhook",
                                 "/api/payments/payos/return",
                                 "/api/payments/payos/cancel",
+                                "/h2-console/**",
                                 "/actuator/**"
                         ).permitAll()
                         .requestMatchers("/internal/**").permitAll()

@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { DecimalPipe } from '@angular/common';
 import { UserApiService, UserProfile } from '../../core/api/user/user-api.service';
+import { CheckoutApiService } from '../../core/api/checkout/checkout-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
 
 interface ProfileForm {
@@ -13,7 +15,7 @@ interface ProfileForm {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, DecimalPipe],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +24,7 @@ export class ProfilePage implements OnInit {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly userApi = inject(UserApiService);
+  private readonly checkoutApi = inject(CheckoutApiService);
 
   protected readonly loggingOut = signal(false);
   protected readonly loadingProfile = signal(true);
@@ -30,6 +33,57 @@ export class ProfilePage implements OnInit {
   protected readonly loadError = signal('');
   protected readonly message = signal('');
   protected readonly profile = signal<UserProfile | null>(null);
+
+  protected readonly activeTab = signal<'profile' | 'orders' | 'collection' | 'settings'>('profile');
+  protected readonly orders = signal<any[]>([]);
+  protected readonly loadingOrders = signal(false);
+  protected readonly ordersError = signal('');
+
+  protected setActiveTab(tab: 'profile' | 'orders' | 'collection' | 'settings'): void {
+    this.activeTab.set(tab);
+    if (tab === 'orders') {
+      this.loadOrders();
+    }
+  }
+
+  protected loadOrders(): void {
+    this.loadingOrders.set(true);
+    this.ordersError.set('');
+    this.checkoutApi.getMyOrders().subscribe({
+      next: (response) => {
+        this.orders.set(response.data || []);
+        this.loadingOrders.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading orders:', err);
+        this.ordersError.set('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
+        this.loadingOrders.set(false);
+      }
+    });
+  }
+
+  protected getStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING_SHIPPING_FEE': return 'Chờ tính phí vận chuyển';
+      case 'PENDING_PAYMENT': return 'Chờ thanh toán';
+      case 'PAID': return 'Đã thanh toán';
+      case 'COMPLETED': return 'Hoàn thành';
+      case 'CANCELLED': return 'Đã hủy';
+      case 'SHIPPING_CREATED': return 'Đang giao hàng';
+      default: return status;
+    }
+  }
+
+  protected getStatusClass(status: string): string {
+    switch (status) {
+      case 'PAID':
+      case 'COMPLETED': return 'status-completed';
+      case 'CANCELLED': return 'status-cancelled';
+      case 'PENDING_PAYMENT':
+      case 'PENDING_SHIPPING_FEE': return 'status-pending';
+      default: return 'status-default';
+    }
+  }
 
   protected readonly form = new FormGroup<ProfileForm>({
     fullName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),

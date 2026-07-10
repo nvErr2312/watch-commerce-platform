@@ -1,4 +1,6 @@
 package com.fullstack.paymentservice.payos;
 
-public record PayOsPaymentLink(String paymentLinkId, String checkoutUrl) {
+import java.time.Instant;
+
+public record PayOsPaymentLink(String paymentLinkId, String checkoutUrl, Instant expiresAt) {
 }

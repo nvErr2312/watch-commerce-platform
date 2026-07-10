@@ -80,9 +80,9 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'profile',
+    path: 'checkout',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/profile/profile.page').then((m) => m.ProfilePage),
+      import('./features/checkout/checkout.page').then((m) => m.CheckoutPage),
   },
 ];

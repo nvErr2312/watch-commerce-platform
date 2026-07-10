@@ -14,6 +14,7 @@ import com.fullstack.inventoryservice.command.repository.InventoryReservationRep
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -30,7 +31,7 @@ public class InventoryCommandHandler {
     @CommandHandler
     @Transactional
     public void handle(ReserveInventoryCommand command) {
-        Map<String, Integer> requestedQuantityByProduct = requestedQuantityByProduct(command);
+        Map<UUID, Integer> requestedQuantityByProduct = requestedQuantityByProduct(command);
         if (requestedQuantityByProduct.isEmpty()) {
             eventGateway.publish(new InventoryReserveFailedEvent(command.getOrderId(), "Inventory items are empty"));
             return;
@@ -41,7 +42,7 @@ public class InventoryCommandHandler {
         }
 
         Map<InventoryItem, Integer> lockedItems = new HashMap<>();
-        for (Map.Entry<String, Integer> requested : requestedQuantityByProduct.entrySet()) {
+        for (Map.Entry<UUID, Integer> requested : requestedQuantityByProduct.entrySet()) {
             InventoryItem item = inventoryItemRepository.findByIdForUpdate(requested.getKey()).orElse(null);
             if (item == null || item.getAvailableQuantity() < requested.getValue()) {
                 eventGateway.publish(new InventoryReserveFailedEvent(command.getOrderId(),
@@ -71,7 +72,7 @@ public class InventoryCommandHandler {
             return;
         }
 
-        for (Map.Entry<String, Integer> requested : requestedQuantityByProduct(command.getItems()).entrySet()) {
+        for (Map.Entry<UUID, Integer> requested : requestedQuantityByProduct(command.getItems()).entrySet()) {
             inventoryItemRepository.findByIdForUpdate(requested.getKey()).ifPresent(item -> {
                 item.setAvailableQuantity(item.getAvailableQuantity() + requested.getValue());
                 inventoryItemRepository.save(item);
@@ -83,13 +84,12 @@ public class InventoryCommandHandler {
         eventGateway.publish(new InventoryReleasedEvent(command.getOrderId()));
     }
 
-    private Map<String, Integer> requestedQuantityByProduct(ReserveInventoryCommand command) {
-        Map<String, Integer> quantities = new HashMap<>();
+    private Map<UUID, Integer> requestedQuantityByProduct(ReserveInventoryCommand command) {
         return requestedQuantityByProduct(command.getItems());
     }
 
-    private Map<String, Integer> requestedQuantityByProduct(Iterable<OrderItemPayload> items) {
-        Map<String, Integer> quantities = new HashMap<>();
+    private Map<UUID, Integer> requestedQuantityByProduct(Iterable<OrderItemPayload> items) {
+        Map<UUID, Integer> quantities = new HashMap<>();
         if (items == null) {
             return quantities;
         }

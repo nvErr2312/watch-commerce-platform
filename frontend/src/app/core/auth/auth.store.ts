@@ -35,6 +35,32 @@ export class AuthStore {
   readonly isAdmin = computed(() => this.role() === 'ADMIN');
   readonly email = computed(() => this.claims().email ?? null);
 
+  readonly currentUser = computed(() => {
+    const token = this.accessToken();
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      // Decode base64url safely
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const parsed = JSON.parse(jsonPayload) as { sub: string; email: string; role: string };
+      return {
+        id: Number(parsed.sub),
+        email: parsed.email,
+        role: parsed.role,
+      };
+    } catch (e) {
+      console.error('Error decoding auth token:', e);
+      return null;
+    }
+  });
+
+
   login(email: string, password: string): Observable<TokenResponse> {
     return this.identityApi.login(email, password).pipe(
       map((response) => response.data),

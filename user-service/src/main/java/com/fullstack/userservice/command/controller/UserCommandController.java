@@ -16,6 +16,7 @@ import com.fullstack.userservice.query.projection.UserReadModelRepository;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class UserCommandController {
@@ -94,6 +96,7 @@ public class UserCommandController {
                     throw new IllegalArgumentException("Tên người dùng đã được sử dụng");
                 });
 
+        log.info("update profile, aggregateId={}", userId);
         commandGateway.sendAndWait(new UpdateUserProfileCommand(
                 userId,
                 username,

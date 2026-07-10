@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Table(name = "inventory_items")
 public class InventoryItem {
     @Id
-    private Long productId;
+    private UUID productId;
 
     @Column(nullable = false)
     private int availableQuantity;

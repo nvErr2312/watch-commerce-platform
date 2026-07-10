@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserReadModelRepository extends JpaRepository<UserReadModel, Long> {
     Optional<UserReadModel> findByEmail(String email);
+    Optional<UserReadModel> findByUsername(String username);
 }

@@ -30,4 +30,6 @@ public class PaymentRecord {
     private String status;
 
     private Instant createdAt;
+
+    private Instant expiresAt;
 }

@@ -4,7 +4,7 @@
 
     <nav class="main-nav" aria-label="Điều hướng chính">
       <a routerLink="/home" (click)="closeUserMenu()">Trang chủ</a>
-      <a href="#products" (click)="closeUserMenu()">Sản phẩm</a>
+      <a routerLink="/products" (click)="closeUserMenu()">Sản phẩm</a>
       <a href="#collections" (click)="closeUserMenu()">Bộ sưu tập</a>
       <a href="#brands" (click)="closeUserMenu()">Thương hiệu</a>
       <a href="#support" (click)="closeUserMenu()">Hỗ trợ</a>
@@ -55,7 +55,7 @@
         Theo dõi sản phẩm nổi bật, bộ sưu tập mới và các thương hiệu được yêu thích tại HOROLOGUE.
       </p>
       <div class="hero-actions">
-        <a class="primary-link" href="#products">Xem sản phẩm</a>
+        <a class="primary-link" routerLink="/products">Xem sản phẩm</a>
         <a class="secondary-link" href="#collections">Bộ sưu tập mới</a>
       </div>
     </div>

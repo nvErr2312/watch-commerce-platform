@@ -61,7 +61,12 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "proxyConfig": "proxy.conf.json"
+            "proxyConfig": "proxy.conf.json",
+            "host": "localhost",
+            "port": 4200,
+            "headers": {
+              "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+            }
           },
           "configurations": {
             "production": {
@@ -80,3 +85,4 @@
     }
   }
 }
+

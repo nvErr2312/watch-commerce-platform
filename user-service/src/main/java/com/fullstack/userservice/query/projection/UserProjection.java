@@ -8,6 +8,7 @@ import com.fullstack.userservice.command.model.Role;
 import com.fullstack.userservice.command.model.UserStatus;
 import com.fullstack.userservice.query.model.UserReadModel;
 import java.time.Instant;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.eventhandling.EventHandler;
 import org.springframework.stereotype.Component;
@@ -19,10 +20,23 @@ public class UserProjection {
 
     @EventHandler
     public void on(UserCreatedEvent event) {
-        UserReadModel user = new UserReadModel();
+        String email = event.getEmail().trim().toLowerCase();
+        String username = event.getUsername().trim().toLowerCase();
+        Optional<UserReadModel> existingByEmail = repository.findByEmail(email);
+        if (existingByEmail.isPresent() && !existingByEmail.get().getId().equals(event.getUserId())) {
+            repository.delete(existingByEmail.get());
+            repository.flush();
+        }
+        Optional<UserReadModel> existingByUsername = repository.findByUsername(username);
+        if (existingByUsername.isPresent() && !existingByUsername.get().getId().equals(event.getUserId())) {
+            repository.delete(existingByUsername.get());
+            repository.flush();
+        }
+        UserReadModel user = repository.findById(event.getUserId()).orElseGet(UserReadModel::new);
+
         user.setId(event.getUserId());
-        user.setEmail(event.getEmail());
-        user.setUsername(event.getUsername());
+        user.setEmail(email);
+        user.setUsername(username);
         user.setFullName(event.getFullName());
         user.setPhone(event.getPhone());
         user.setRole(Role.valueOf(event.getRole()));

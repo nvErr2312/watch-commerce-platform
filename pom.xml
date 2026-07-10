@@ -19,5 +19,7 @@
         <module>shipping-service</module>
         <module>payment-service</module>
         <module>apigateway</module>
+        <module>product-service</module>
+        <module>admin-service</module>
     </modules>
 </project>

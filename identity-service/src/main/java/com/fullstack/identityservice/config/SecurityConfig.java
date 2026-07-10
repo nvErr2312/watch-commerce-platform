@@ -40,6 +40,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) ->
@@ -53,7 +54,8 @@ public class SecurityConfig {
                                 "/auth/google",
                                 "/auth/verify-email",
                                 "/auth/refresh",
-                                "/auth/logout"
+                                "/auth/logout",
+                                "/h2-console/**"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class)

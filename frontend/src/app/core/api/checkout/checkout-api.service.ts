@@ -9,7 +9,7 @@ export interface ApiResponse<T> {
 }
 
 export interface OrderItemRequest {
-  productId: number;
+  productId: string;
   quantity: number;
   unitPrice: number;
 }
@@ -40,5 +40,9 @@ export class CheckoutApiService {
 
   getOrder(orderId: number): Observable<ApiResponse<OrderResponse>> {
     return this.http.get<ApiResponse<OrderResponse>>(`/api/orders/${orderId}`);
+  }
+
+  getMyOrders(): Observable<ApiResponse<OrderResponse[]>> {
+    return this.http.get<ApiResponse<OrderResponse[]>>('/api/orders/me');
   }
 }

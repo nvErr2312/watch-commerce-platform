@@ -1,6 +1,7 @@
 package com.fullstack.inventoryservice.query.handler;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
@@ -31,7 +32,8 @@ public class InventoryQueryHandler {
 
     @QueryHandler
     public InventoryItemDto handle(FindInventoryItemByProductIdQuery query) {
-        InventoryItem item = repository.findById(query.getProductId())
+        UUID productId = UUID.fromString(query.getProductId());
+        InventoryItem item = repository.findById(productId)
                 .orElseThrow(() -> new InventoryNotFoundException(query.getProductId()));
         return toDto(item);
     }
@@ -43,6 +45,6 @@ public class InventoryQueryHandler {
     }
 
     private InventoryItemDto toDto(InventoryItem item) {
-        return new InventoryItemDto(item.getProductId(), item.getAvailableQuantity());
+        return new InventoryItemDto(item.getProductId().toString(), item.getAvailableQuantity());
     }
 }

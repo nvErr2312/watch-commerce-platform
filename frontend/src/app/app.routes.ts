@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -24,10 +25,59 @@ export const routes: Routes = [
       import('./features/home/home.page').then((m) => m.HomePage),
   },
   {
-    path: 'profile',
+    path: 'products',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/profile/profile.page').then((m) => m.ProfilePage),
+      import('./features/products/product-list.page').then((m) => m.ProductListPage),
+  },
+  {
+    path: 'products/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/products/product-detail.page').then((m) => m.ProductDetailPage),
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./features/admin/shell/admin-shell.component').then((m) => m.AdminShellComponent),
+    children: [
+      { path: '', redirectTo: 'products', pathMatch: 'full' },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/admin/dashboard/dashboard.page').then((m) => m.DashboardPage),
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./features/admin/products/product-management.page').then((m) => m.ProductManagementPage),
+      },
+      {
+        path: 'customers',
+        data: { title: 'Khách hàng' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'logistics',
+        data: { title: 'Vận chuyển' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'revenue',
+        data: { title: 'Doanh thu' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+      {
+        path: 'security',
+        data: { title: 'Bảo mật' },
+        loadComponent: () =>
+          import('./features/admin/coming-soon/coming-soon.page').then((m) => m.ComingSoonPage),
+      },
+    ],
   },
   {
     path: 'checkout',

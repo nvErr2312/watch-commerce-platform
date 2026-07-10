@@ -27,63 +27,7 @@ export class HomePage {
 
   protected readonly loggingOut = signal(false);
   protected readonly userMenuOpen = signal(false);
-  protected readonly cartDrawerOpen = signal(false);
-  protected readonly toastMessage = signal('');
-
-  protected readonly cartItems = this.cart.items;
-  protected readonly cartCount = this.cart.totalItemsCount;
-  protected readonly cartSubtotal = this.cart.subtotal;
-
-  protected readonly products: Product[] = [
-    {
-      id: '00000000-0000-0000-0000-000000000001',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-001',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-001',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000002',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-002',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-002',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000003',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-003',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-003',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000004',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-004',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-004',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000005',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-005',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-005',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000006',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-006',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-006',
-    },
-  ];
+  protected readonly isAdmin = this.auth.isAdmin;
 
   protected toggleUserMenu(): void {
     this.userMenuOpen.update((open) => !open);

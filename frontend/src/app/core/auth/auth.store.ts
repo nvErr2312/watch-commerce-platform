@@ -3,13 +3,37 @@ import { catchError, map, Observable, of, tap } from 'rxjs';
 import { IdentityApiService, RegisterRequest, TokenResponse } from '../api/identity/identity-api.service';
 import { TokenStorageService } from './token-storage.service';
 
+interface JwtClaims {
+  role?: string;
+  email?: string;
+}
+
+function decodeClaims(accessToken: string | null): JwtClaims {
+  if (!accessToken) {
+    return {};
+  }
+
+  try {
+    const payload = accessToken.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json) as JwtClaims;
+  } catch {
+    return {};
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly identityApi = inject(IdentityApiService);
   private readonly tokenStorage = inject(TokenStorageService);
   private readonly accessToken = signal(this.tokenStorage.getAccessToken());
 
+  private readonly claims = computed(() => decodeClaims(this.accessToken()));
+
   readonly isAuthenticated = computed(() => Boolean(this.accessToken()));
+  readonly role = computed(() => this.claims().role ?? null);
+  readonly isAdmin = computed(() => this.role() === 'ADMIN');
+  readonly email = computed(() => this.claims().email ?? null);
 
   readonly currentUser = computed(() => {
     const token = this.accessToken();

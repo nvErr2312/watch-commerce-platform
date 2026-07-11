@@ -43,8 +43,8 @@ public class PayOsClient {
         Instant expiresAt = Instant.now().plus(Duration.ofMinutes(expireMinutes));
         long expiredAt = expiresAt.getEpochSecond();
         String description = ("DH" + orderId).substring(0, Math.min(9, ("DH" + orderId).length()));
-        String signature = sign("amount=%d&cancelUrl=%s&description=%s&expiredAt=%d&orderCode=%d&returnUrl=%s"
-                .formatted(vnd, cancelUrl, description, expiredAt, orderId, returnUrl));
+        String signature = sign("amount=%d&cancelUrl=%s&description=%s&orderCode=%d&returnUrl=%s"
+                .formatted(vnd, cancelUrl, description, orderId, returnUrl));
         Map<String, Object> body = Map.of(
                 "orderCode", orderId,
                 "amount", vnd,
@@ -66,7 +66,7 @@ public class PayOsClient {
 
         JsonNode data = response == null ? null : response.path("data");
         if (data == null || data.path("checkoutUrl").isMissingNode()) {
-            throw new IllegalStateException("payOS did not return checkoutUrl");
+            throw new IllegalStateException("payOS did not return checkoutUrl: " + response);
         }
         return new PayOsPaymentLink(data.path("paymentLinkId").asText(), data.path("checkoutUrl").asText(), expiresAt);
     }

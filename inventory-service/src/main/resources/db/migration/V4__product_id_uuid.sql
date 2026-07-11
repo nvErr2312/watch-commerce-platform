@@ -13,5 +13,4 @@ insert into inventory_items (product_id, available_quantity) values
     ('52b6f738-1518-4779-a7cd-4f91d5993b64', 20),   -- Seiko Prospex Diver
     ('c594f9c4-d138-40f2-a0be-8f6612b72eee', 2),     -- Hublot Big Bang Unico
     ('c293d597-c394-4d56-89cf-7ce85fbebb17', 8),     -- Tag Heuer Carrera Calibre 16
-    ('c03ba0bf-43ad-4dc5-a5c1-64a54638093e', 50)     -- Casio Edifice Chronograph
-on conflict (product_id) do nothing;
+    ('c03ba0bf-43ad-4dc5-a5c1-64a54638093e', 50);     -- Casio Edifice Chronograph

@@ -43,13 +43,17 @@ public class ShippingFeeCommandHandler {
 
     private BigDecimal feeFor(String shippingAddress) {
         String address = shippingAddress == null ? "" : shippingAddress.toUpperCase(Locale.ROOT);
+        boolean remote = address.contains("HUYỆN/XÃ NGOẠI THÀNH")
+                || address.contains("HUYEN/XA NGOAI THANH")
+                || address.contains("NGOẠI THÀNH")
+                || address.contains("NGOAI THANH");
         return ruleRepository.findAll().stream()
                 .filter(rule -> !"DEFAULT".equals(rule.getRegionCode()))
                 .filter(rule -> address.contains(rule.getRegionCode())
                         || address.contains(rule.getRegionName().toUpperCase(Locale.ROOT)))
                 .findFirst()
                 .or(() -> ruleRepository.findById("DEFAULT"))
-                .map(ShippingFeeRule::getFee)
+                .map(rule -> remote && rule.getRemoteFee() != null ? rule.getRemoteFee() : rule.getFee())
                 .orElse(BigDecimal.valueOf(45000));
     }
 }

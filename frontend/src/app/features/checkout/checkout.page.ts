@@ -203,7 +203,7 @@ export class CheckoutPage {
     });
   }
 
-  private startPolling(orderId: number): void {
+  private startPolling(orderId: string | number): void {
     // Poll order status every 2 seconds
     this.pollSubscription = interval(2000).subscribe({
       next: () => {

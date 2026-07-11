@@ -27,6 +27,7 @@ export class HomePage {
 
   protected readonly loggingOut = signal(false);
   protected readonly userMenuOpen = signal(false);
+  protected readonly isAdmin = this.auth.isAdmin;
   protected readonly cartDrawerOpen = signal(false);
   protected readonly toastMessage = signal('');
 
@@ -36,52 +37,52 @@ export class HomePage {
 
   protected readonly products: Product[] = [
     {
-      id: '00000000-0000-0000-0000-000000000001',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-001',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-001',
+      id: 'bde7b1d3-1b3e-47ac-88dd-9574df739979',
+      brand: 'CASIO',
+      name: 'G-Shock GA-2100',
+      description: 'Thiết kế thể thao mỏng nhẹ, bền bỉ cho hoạt động hằng ngày.',
+      price: 9000,
+      image: 'https://unsplash.com/photos/GHrKMXCb1gs/download?force=true&w=900',
     },
     {
-      id: '00000000-0000-0000-0000-000000000002',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-002',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-002',
+      id: '3dd817bc-19a0-4904-bebf-be776258ba67',
+      brand: 'PATEK PHILIPPE',
+      name: 'Nautilus 5711',
+      description: 'Biểu tượng đồng hồ thể thao sang trọng với dây đeo liền khối.',
+      price: 10000,
+      image: 'https://unsplash.com/photos/VqAz2J71C3Y/download?force=true&w=900',
     },
     {
-      id: '00000000-0000-0000-0000-000000000003',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-003',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-003',
+      id: 'c9962b2e-c171-4da8-8e83-41b3e95c3850',
+      brand: 'SEIKO',
+      name: 'Presage Cocktail Time',
+      description: 'Thanh lịch với mặt số tinh tế và dây da cổ điển.',
+      price: 7000,
+      image: 'https://unsplash.com/photos/9cddn0X5Mtc/download?force=true&w=900',
     },
     {
-      id: '00000000-0000-0000-0000-000000000004',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-004',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-004',
+      id: '8dfd4bb5-440f-4196-b97f-40ed15078121',
+      brand: 'ROLEX',
+      name: 'Submariner Date',
+      description: 'Mẫu diver kinh điển, mặt số đen và vành bezel xoay.',
+      price: 9000,
+      image: 'https://unsplash.com/photos/UNd3IPfV_7s/download?force=true&w=900',
     },
     {
-      id: '00000000-0000-0000-0000-000000000005',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-005',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-005',
+      id: 'f4d1c974-2e87-435a-b600-4c883f72450c',
+      brand: 'OMEGA',
+      name: 'Speedmaster Professional',
+      description: 'Chronograph huyền thoại với thiết kế thể thao vượt thời gian.',
+      price: 8000,
+      image: 'https://unsplash.com/photos/OOSXECr0sUo/download?force=true&w=900',
     },
     {
-      id: '00000000-0000-0000-0000-000000000006',
-      brand: 'HOROLOGUE',
-      name: 'WATCH-006',
-      description: 'Test watch',
-      price: 1000,
-      image: 'https://placehold.co/600x600?text=WATCH-006',
+      id: '52b6f738-1518-4779-a7cd-4f91d5993b64',
+      brand: 'SEIKO',
+      name: 'Prospex Diver',
+      description: 'Đồng hồ lặn mạnh mẽ, dễ đọc và phù hợp phiêu lưu biển sâu.',
+      price: 6000,
+      image: 'https://unsplash.com/photos/TtK9yVJx5tA/download?force=true&w=900',
     },
   ];
 

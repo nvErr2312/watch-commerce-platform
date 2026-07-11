@@ -2,6 +2,7 @@ package com.fullstack.inventoryservice.command.handler;
 
 import com.fullstack.commonservice.inventory.command.ReleaseInventoryCommand;
 import com.fullstack.commonservice.inventory.command.ReserveInventoryCommand;
+import com.fullstack.commonservice.inventory.command.AdjustInventoryCommand;
 import com.fullstack.commonservice.inventory.event.InventoryReserveFailedEvent;
 import com.fullstack.commonservice.inventory.event.InventoryReleasedEvent;
 import com.fullstack.commonservice.inventory.event.InventoryReservedEvent;
@@ -27,6 +28,22 @@ public class InventoryCommandHandler {
     private final InventoryReservationRepository repository;
     private final InventoryItemRepository inventoryItemRepository;
     private final EventGateway eventGateway;
+
+    @CommandHandler
+    @Transactional
+    public void handle(AdjustInventoryCommand command) {
+        if (command.getAvailableQuantity() < 0) {
+            throw new IllegalArgumentException("Số lượng tồn kho không được âm");
+        }
+        InventoryItem item = inventoryItemRepository.findByIdForUpdate(command.getProductId()).orElseGet(() -> {
+            InventoryItem created = new InventoryItem();
+            created.setProductId(command.getProductId());
+            created.setAvailableQuantity(0);
+            return created;
+        });
+        item.setAvailableQuantity(command.getAvailableQuantity());
+        inventoryItemRepository.save(item);
+    }
 
     @CommandHandler
     @Transactional

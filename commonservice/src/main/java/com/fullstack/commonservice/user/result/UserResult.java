@@ -1,14 +1,14 @@
 package com.fullstack.commonservice.user.result;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResult {
-    private Long id;
+    private String id;
     private String email;
     private String username;
     private String fullName;

@@ -10,11 +10,13 @@ import com.fullstack.orderservice.query.model.OrderReadModel;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@ProcessingGroup("order-projection")
 public class OrderProjection {
     private final OrderReadModelRepository repository;
 

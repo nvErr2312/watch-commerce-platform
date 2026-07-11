@@ -3,11 +3,11 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app/discoveryserver
 
 # Tối ưu Cache: Copy file pom.xml từ thư mục con discoveryserver vào container
-COPY discoveryserver/pom.xml .
+COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Copy toàn bộ mã nguồn từ thư mục con discoveryserver vào container
-COPY discoveryserver/src ./src
+COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Môi trường chạy JRE Java 21 siêu tinh gọn

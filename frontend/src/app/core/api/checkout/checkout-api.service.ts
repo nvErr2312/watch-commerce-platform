@@ -15,14 +15,14 @@ export interface OrderItemRequest {
 }
 
 export interface CreateOrderRequest {
-  userId: number;
+  userId: string | number;
   items: OrderItemRequest[];
   shippingAddress: string;
 }
 
 export interface OrderResponse {
-  orderId: number;
-  userId: number;
+  orderId: string | number;
+  userId: string | number;
   status: string;
   totalAmount: number;
   shippingAddress: string;
@@ -38,7 +38,7 @@ export class CheckoutApiService {
     return this.http.post<ApiResponse<OrderResponse>>('/api/orders', request);
   }
 
-  getOrder(orderId: number): Observable<ApiResponse<OrderResponse>> {
+  getOrder(orderId: string | number): Observable<ApiResponse<OrderResponse>> {
     return this.http.get<ApiResponse<OrderResponse>>(`/api/orders/${orderId}`);
   }
 

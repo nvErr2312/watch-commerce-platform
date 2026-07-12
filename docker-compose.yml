@@ -10,15 +10,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
-  mailpit:
-    image: axllent/mailpit
-    container_name: watch-mailpit
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
+      
   kafka:
     image: apache/kafka:3.7.0
     container_name: watch-kafka

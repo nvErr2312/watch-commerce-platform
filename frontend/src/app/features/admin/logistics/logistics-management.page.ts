@@ -94,7 +94,7 @@ export class LogisticsManagementPage {
     });
   }
 
-  protected getCustomerName(userId: number): string {
+  protected getCustomerName(userId: string | number): string {
     const customer = this.customersById().get(String(userId));
     return customer?.fullName || customer?.username || `KH: ${userId}`;
   }

@@ -98,7 +98,21 @@ spring:
                 redis-rate-limiter.burstCapacity: 40
                 redis-rate-limiter.requestedTokens: 1
 
+        # =====================================================
+        # Inventory public read (product detail stock badge)
+        # =====================================================
+        - id: inventory-service-query
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/inventory/**
 
+        # =====================================================
+        # Admin Service (Admin Console: products/inventory/dashboard)
+        # =====================================================
+        - id: admin-service
+          uri: lb://admin-service
+          predicates:
+            - Path=/api/admin/**
 
 eureka:
   instance:

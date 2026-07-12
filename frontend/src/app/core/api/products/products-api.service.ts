@@ -39,8 +39,7 @@ export type UpdateProductRequest = CreateProductRequest;
 /**
  * Calls Admin Service's proxy endpoints (/api/admin/products) rather than
  * Product Service directly - Admin never bypasses the service that owns the
- * data (FR35). Requires API Gateway to route /api/admin/** to admin-service
- * (not configured yet as of this writing - see team notes).
+ * data (FR35). API Gateway routes /api/admin/** to admin-service.
  */
 @Injectable({ providedIn: 'root' })
 export class ProductsApiService {

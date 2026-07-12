@@ -1,6 +1,7 @@
 package com.fullstack.paymentservice.command.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fullstack.commonservice.payment.event.PaymentCancelledEvent;
 import com.fullstack.commonservice.payment.event.PaymentSucceededEvent;
 import com.fullstack.paymentservice.command.model.PaymentStatus;
 import com.fullstack.paymentservice.command.repository.PaymentRecordRepository;
@@ -29,22 +30,49 @@ public class PayOsPaymentController {
         if (!payload.path("success").asBoolean(false) || !"00".equals(data.path("code").asText())) {
             return ResponseEntity.ok().build();
         }
-        Long orderId = data.path("orderCode").asLong();
+        markSucceeded(data.path("orderCode").asLong());
+        return ResponseEntity.ok().build();
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.home-url}")
+    private String homeUrl;
+
+    @GetMapping("/api/payments/payos/cancel")
+    public ResponseEntity<Void> cancel(@org.springframework.web.bind.annotation.RequestParam(value = "orderCode", required = false) Long orderId) {
+        if (orderId != null) {
+            markCancelled(orderId);
+        }
+        return ResponseEntity.status(302)
+                .header("Location", homeUrl + "?status=cancel")
+                .build();
+    }
+
+    @GetMapping("/api/payments/payos/return")
+    public ResponseEntity<Void> success(@org.springframework.web.bind.annotation.RequestParam(value = "orderCode", required = false) Long orderId) {
+        return ResponseEntity.status(302)
+                .header("Location", homeUrl + "?status=success")
+                .build();
+    }
+
+    private void markSucceeded(Long orderId) {
         repository.findByOrderId(orderId).ifPresent(payment -> {
+            if (!PaymentStatus.PENDING.name().equals(payment.getStatus())) {
+                return;
+            }
             payment.setStatus(PaymentStatus.SUCCEEDED.name());
             repository.save(payment);
             eventGateway.publish(new PaymentSucceededEvent(orderId, payment.getPaymentId()));
         });
-        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/api/payments/payos/cancel")
-    public ResponseEntity<Void> cancel() {
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/api/payments/payos/return")
-    public ResponseEntity<Void> success() {
-        return ResponseEntity.ok().build();
+    private void markCancelled(Long orderId) {
+        repository.findByOrderId(orderId).ifPresent(payment -> {
+            if (!PaymentStatus.PENDING.name().equals(payment.getStatus())) {
+                return;
+            }
+            payment.setStatus(PaymentStatus.CANCELLED.name());
+            repository.save(payment);
+            eventGateway.publish(new PaymentCancelledEvent(orderId, payment.getPaymentId()));
+        });
     }
 }

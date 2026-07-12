@@ -1,116 +1,11 @@
 :host {
   display: block;
-  min-height: 100vh;
   color: #e4e2e4;
-  background: #131315;
   font-family: Inter, Arial, sans-serif;
 }
 
-.admin-shell {
-  display: flex;
-  min-height: 100vh;
-}
-
-// Sidebar
-
-.side-nav {
-  display: none;
-  flex-direction: column;
-  width: 256px;
-  flex-shrink: 0;
-  padding: 32px 16px;
-  background: rgba(27, 27, 29, 0.6);
-  backdrop-filter: blur(32px);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-@media (min-width: 768px) {
-  .side-nav {
-    display: flex;
-  }
-}
-
-.brand {
-  padding: 0 16px;
-  margin-bottom: 48px;
-}
-
-.brand h1 {
-  margin: 0;
-  color: #e9c176;
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-
-.brand p {
-  margin: 4px 0 0;
-  color: #c7c6ca;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.nav-link {
+.product-management-page {
   display: block;
-  padding: 12px 16px;
-  border-radius: 8px;
-  color: #c7c6ca;
-  font-size: 16px;
-  cursor: default;
-}
-
-.nav-link.active {
-  background: rgba(233, 193, 118, 0.1);
-  color: #e9c176;
-  border-right: 2px solid #e9c176;
-}
-
-.nav-link.disabled {
-  opacity: 0.45;
-}
-
-// Main canvas
-
-.main-canvas {
-  position: relative;
-  flex: 1;
-  overflow-y: auto;
-  background: #0a0a0b;
-}
-
-.ambient-glow {
-  position: absolute;
-  top: 0;
-  left: 25%;
-  width: 800px;
-  height: 400px;
-  background: rgba(233, 193, 118, 0.05);
-  border-radius: 50%;
-  filter: blur(120px);
-  pointer-events: none;
-}
-
-.content {
-  position: relative;
-  z-index: 1;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 48px 20px;
-}
-
-@media (min-width: 768px) {
-  .content {
-    padding: 48px 60px;
-  }
 }
 
 // Header
@@ -266,8 +161,11 @@
   width: 56px;
   height: 56px;
   flex-shrink: 0;
-  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
   background: #1f1f21;
+  border: 1px solid rgba(233, 193, 118, 0.12);
   overflow: hidden;
 }
 
@@ -275,6 +173,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.thumb-placeholder {
+  color: #46464a;
 }
 
 .col-product h3 {
@@ -297,6 +199,15 @@
 
 .col-category {
   color: #c7c6ca;
+}
+
+.category-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(198, 198, 198, 0.08);
+  color: #c7c6ca;
+  font-size: 12px;
 }
 
 .price-value {
@@ -327,21 +238,50 @@
 }
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 4px 12px;
   border-radius: 9999px;
   border: 1px solid rgba(197, 160, 89, 0.3);
   background: rgba(197, 160, 89, 0.1);
   color: #c5a059;
   font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.status-badge.deleted {
+.status-badge[data-status='out-of-stock'] {
+  border-color: rgba(255, 180, 171, 0.3);
+  background: rgba(255, 180, 171, 0.1);
+  color: #ffb4ab;
+}
+
+.status-badge[data-status='low-stock'] {
+  border-color: rgba(233, 193, 118, 0.35);
+  background: rgba(233, 193, 118, 0.12);
+  color: #e9c176;
+}
+
+.status-badge[data-status='in-stock'] {
+  border-color: rgba(142, 204, 158, 0.3);
+  background: rgba(142, 204, 158, 0.1);
+  color: #8ecc9e;
+}
+
+.status-badge[data-status='unknown'] {
   border-color: rgba(145, 144, 148, 0.3);
   background: rgba(145, 144, 148, 0.1);
   color: #919094;
+}
+
+.status-qty {
+  opacity: 0.75;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .col-actions {
@@ -351,20 +291,28 @@
 }
 
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: 8px;
   background: none;
   color: #c7c6ca;
   cursor: pointer;
   font-size: 16px;
-  transition: color 160ms ease;
+  transition: color 160ms ease, background 160ms ease;
 }
 
 .icon-btn:hover {
   color: #e9c176;
+  background: rgba(233, 193, 118, 0.1);
 }
 
 .icon-btn.danger:hover {
   color: #ffb4ab;
+  background: rgba(255, 180, 171, 0.1);
 }
 
 .empty-state {

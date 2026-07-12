@@ -1,7 +1,33 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { InventoryAdminApiService } from '../../../core/api/inventory/inventory-admin-api.service';
 import { ProductSummary, ProductsApiService } from '../../../core/api/products/products-api.service';
+
+type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'unknown';
+
+const LOW_STOCK_THRESHOLD = 5;
+
+function stockStatus(quantity: number | undefined): StockStatus {
+  if (quantity === undefined) {
+    return 'unknown';
+  }
+  if (quantity <= 0) {
+    return 'out-of-stock';
+  }
+  if (quantity <= LOW_STOCK_THRESHOLD) {
+    return 'low-stock';
+  }
+  return 'in-stock';
+}
+
+const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
+  'in-stock': 'Còn Hàng',
+  'low-stock': 'Sắp Hết',
+  'out-of-stock': 'Hết Hàng',
+  unknown: 'Chưa Rõ',
+};
 
 interface ProductForm {
   name: FormControl<string>;
@@ -10,6 +36,7 @@ interface ProductForm {
   description: FormControl<string>;
   price: FormControl<number>;
   imageUrl: FormControl<string>;
+  quantity: FormControl<number>;
 }
 
 const PAGE_SIZE = 3;
@@ -23,8 +50,10 @@ const PAGE_SIZE = 3;
 })
 export class ProductManagementPage {
   private readonly api = inject(ProductsApiService);
+  private readonly inventoryApi = inject(InventoryAdminApiService);
 
   protected readonly products = signal<ProductSummary[]>([]);
+  protected readonly stockByProductId = signal<Map<string, number>>(new Map());
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly searchTerm = signal('');
@@ -40,6 +69,9 @@ export class ProductManagementPage {
   protected readonly priceSubmitting = signal(false);
 
   protected readonly deletingProductId = signal<string | null>(null);
+  protected readonly stockEditProductId = signal<string | null>(null);
+  protected readonly stockEditValue = signal<number | null>(null);
+  protected readonly stockSubmitting = signal(false);
 
   protected readonly filtered = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -66,6 +98,7 @@ export class ProductManagementPage {
     description: new FormControl('', { nonNullable: true }),
     price: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
     imageUrl: new FormControl('', { nonNullable: true }),
+    quantity: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
   });
 
   constructor() {
@@ -75,15 +108,56 @@ export class ProductManagementPage {
   protected reload(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.api.list().subscribe({
-      next: (response) => {
-        this.products.set(response.data);
+    forkJoin({ products: this.api.list(), inventory: this.inventoryApi.list() }).subscribe({
+      next: ({ products, inventory }) => {
+        this.products.set(products.data);
+        this.stockByProductId.set(new Map(inventory.data.map((item) => [item.productId, item.availableQuantity])));
         this.loading.set(false);
         this.page.set(0);
       },
       error: () => {
         this.errorMessage.set('Không tải được danh sách sản phẩm. Kiểm tra Gateway/Admin Service đã chạy chưa.');
         this.loading.set(false);
+      },
+    });
+  }
+
+  protected stockOf(productId: string): number | undefined {
+    return this.stockByProductId().get(productId);
+  }
+
+  protected stockStatusOf(productId: string): StockStatus {
+    return stockStatus(this.stockOf(productId));
+  }
+
+  protected stockLabelOf(productId: string): string {
+    return STOCK_STATUS_LABEL[this.stockStatusOf(productId)];
+  }
+
+  protected openStockEdit(product: ProductSummary): void {
+    this.stockEditProductId.set(product.productId);
+    this.stockEditValue.set(this.stockOf(product.productId) ?? 0);
+  }
+
+  protected cancelStockEdit(): void {
+    this.stockEditProductId.set(null);
+    this.stockEditValue.set(null);
+  }
+
+  protected submitStockEdit(): void {
+    const productId = this.stockEditProductId();
+    const quantity = this.stockEditValue();
+    if (!productId || quantity === null || quantity < 0 || !Number.isInteger(quantity)) return;
+    this.stockSubmitting.set(true);
+    this.inventoryApi.adjust(productId, quantity).subscribe({
+      next: () => {
+        this.stockSubmitting.set(false);
+        this.cancelStockEdit();
+        this.reload();
+      },
+      error: () => {
+        this.stockSubmitting.set(false);
+        this.errorMessage.set('Không cập nhật được số lượng tồn kho.');
       },
     });
   }
@@ -104,7 +178,7 @@ export class ProductManagementPage {
     this.formMode.set('create');
     this.editingProductId.set(null);
     this.formError.set('');
-    this.form.reset({ name: '', brand: '', category: '', description: '', price: 0, imageUrl: '' });
+    this.form.reset({ name: '', brand: '', category: '', description: '', price: 0, imageUrl: '', quantity: 0 });
   }
 
   protected openEditForm(product: ProductSummary): void {
@@ -118,6 +192,7 @@ export class ProductManagementPage {
       description: '',
       price: product.price,
       imageUrl: product.imageUrl,
+      quantity: this.stockOf(product.productId) ?? 0,
     });
   }
 
@@ -143,10 +218,19 @@ export class ProductManagementPage {
         : this.api.create(value);
 
     request$.subscribe({
-      next: () => {
-        this.formSubmitting.set(false);
-        this.closeForm();
-        this.reload();
+      next: (response) => {
+        const productId = mode === 'edit' && this.editingProductId() ? this.editingProductId()! : response.data;
+        this.inventoryApi.adjust(productId, value.quantity).subscribe({
+          next: () => {
+            this.formSubmitting.set(false);
+            this.closeForm();
+            this.reload();
+          },
+          error: () => {
+            this.formSubmitting.set(false);
+            this.formError.set('Lưu sản phẩm được nhưng không cập nhật được số lượng tồn kho.');
+          },
+        });
       },
       error: (err) => {
         this.formSubmitting.set(false);

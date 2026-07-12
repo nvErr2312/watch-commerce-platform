@@ -1,23 +1,5 @@
-<div class="admin-shell">
-  <nav class="side-nav">
-    <div class="brand">
-      <h1>Admin Console</h1>
-      <p>Elite Management</p>
-    </div>
-    <ul class="nav-list">
-      <li><span class="nav-link disabled">Dashboard</span></li>
-      <li><span class="nav-link active">Sản phẩm</span></li>
-      <li><span class="nav-link disabled">Khách hàng</span></li>
-      <li><span class="nav-link disabled">Vận chuyển</span></li>
-      <li><span class="nav-link disabled">Doanh thu</span></li>
-    </ul>
-  </nav>
-
-  <main class="main-canvas">
-    <div class="ambient-glow"></div>
-
-    <div class="content">
-      <header class="page-header">
+<div class="product-management-page">
+  <header class="page-header">
         <div>
           <h2>Quản lý Sản phẩm</h2>
           <p>Kiểm soát danh mục đồng hồ cao cấp của bạn.</p>
@@ -62,6 +44,8 @@
                 <div class="thumb">
                   @if (product.imageUrl) {
                     <img [src]="product.imageUrl" [alt]="product.name" />
+                  } @else {
+                    <svg class="thumb-placeholder" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><path d="M12 9v3l2 2"/></svg>
                   }
                 </div>
                 <div>
@@ -69,7 +53,13 @@
                   <p class="brand-label">{{ product.brand || '—' }}</p>
                 </div>
               </div>
-              <div class="col col-category">{{ product.category || '—' }}</div>
+              <div class="col col-category">
+                @if (product.category) {
+                  <span class="category-chip">{{ product.category }}</span>
+                } @else {
+                  —
+                }
+              </div>
               <div class="col col-price">
                 @if (priceEditProductId() === product.productId) {
                   <div class="price-edit">
@@ -89,7 +79,22 @@
                 }
               </div>
               <div class="col col-status">
-                <span class="status-badge" [class.deleted]="false">Hoạt Động</span>
+                @if (stockEditProductId() === product.productId) {
+                  <div class="price-edit">
+                    <input type="number" min="0" step="1" [value]="stockEditValue()"
+                      (input)="stockEditValue.set($any($event.target).valueAsNumber)" />
+                    <button type="button" class="icon-btn" [disabled]="stockSubmitting()" (click)="submitStockEdit()">✓</button>
+                    <button type="button" class="icon-btn" (click)="cancelStockEdit()">×</button>
+                  </div>
+                } @else {
+                <button type="button" class="status-badge" [attr.data-status]="stockStatusOf(product.productId)"
+                  (click)="openStockEdit(product)" title="Cập nhật số lượng tồn kho">
+                  {{ stockLabelOf(product.productId) }}
+                  @if (stockOf(product.productId); as qty) {
+                    <span class="status-qty">· {{ qty }}</span>
+                  }
+                </button>
+                }
               </div>
               <div class="col col-actions">
                 <button type="button" class="icon-btn" (click)="openEditForm(product)" aria-label="Sửa">✎</button>
@@ -112,8 +117,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </main>
 </div>
 
 @if (formMode()) {
@@ -157,6 +160,14 @@
       <label>
         URL hình ảnh
         <input type="text" formControlName="imageUrl" />
+      </label>
+
+      <label>
+        Số lượng tồn kho
+        <input type="number" min="0" step="1" formControlName="quantity" />
+        @if (hasError('quantity', 'required') || hasError('quantity', 'min')) {
+          <span class="field-error">Số lượng phải lớn hơn hoặc bằng 0.</span>
+        }
       </label>
 
       @if (formError()) {

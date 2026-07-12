@@ -64,7 +64,7 @@ public class UserQueryController {
 
     private UserResponse toResponse(UserResult user) {
         return UserResponse.builder()
-                .id(user.getId())
+                .id(Long.parseLong(user.getId()))
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .fullName(user.getFullName())

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -32,10 +34,14 @@ public class PayOsClient {
     private String returnUrl;
     @Value("${app.payos.cancel-url}")
     private String cancelUrl;
+    @Value("${app.payment.expire-minutes:15}")
+    private long expireMinutes;
 
     public PayOsPaymentLink createPaymentLink(Long orderId, BigDecimal amount) {
         requireConfig();
         int vnd = amount.setScale(0, RoundingMode.HALF_UP).intValueExact();
+        Instant expiresAt = Instant.now().plus(Duration.ofMinutes(expireMinutes));
+        long expiredAt = expiresAt.getEpochSecond();
         String description = ("DH" + orderId).substring(0, Math.min(9, ("DH" + orderId).length()));
         String signature = sign("amount=%d&cancelUrl=%s&description=%s&orderCode=%d&returnUrl=%s"
                 .formatted(vnd, cancelUrl, description, orderId, returnUrl));
@@ -43,6 +49,7 @@ public class PayOsClient {
                 "orderCode", orderId,
                 "amount", vnd,
                 "description", description,
+                "expiredAt", expiredAt,
                 "cancelUrl", cancelUrl,
                 "returnUrl", returnUrl,
                 "signature", signature);
@@ -59,9 +66,9 @@ public class PayOsClient {
 
         JsonNode data = response == null ? null : response.path("data");
         if (data == null || data.path("checkoutUrl").isMissingNode()) {
-            throw new IllegalStateException("payOS did not return checkoutUrl");
+            throw new IllegalStateException("payOS did not return checkoutUrl: " + response);
         }
-        return new PayOsPaymentLink(data.path("paymentLinkId").asText(), data.path("checkoutUrl").asText());
+        return new PayOsPaymentLink(data.path("paymentLinkId").asText(), data.path("checkoutUrl").asText(), expiresAt);
     }
 
     public boolean validSignature(JsonNode data, String signature) {

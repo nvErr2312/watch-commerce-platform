@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 @Slf4j
 public class EmailService {
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender javaMailSender;
 
     @Autowired

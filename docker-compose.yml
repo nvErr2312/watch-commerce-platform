@@ -1,64 +1,310 @@
 services:
-  redis:
-    image: redis:7.2
-    container_name: watch-redis
+  discoveryserver:
+    build:
+      context: .
+      dockerfile: discoveryserver/Dockerfile
+    container_name: discoveryserver
+    hostname: discoveryserver
     restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - microservice-network
+
+  apigateway:
+    build:
+      context: .
+      dockerfile: apigateway/Dockerfile
+    container_name: apigateway
+    hostname: apigateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_INSTANCE_HOSTNAME: apigateway
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+    depends_on:
+      - discoveryserver
+      - redis
+    networks:
+      - microservice-network
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+    container_name: identity-service
+    hostname: identity-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      IDENTITY_SERVICE_PORT: 8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AXON_SERVER_SERVERS: axonserver:8124
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_ID: identity-service
+      EMAIL_VERIFICATION_TOPIC: email-verification
+      EUREKA_INSTANCE_HOSTNAME: identity-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+      IDENTITY_SERVICE_URL: http://localhost:8080/api/v1
+      FRONTEND_LOGIN_URL: http://localhost:4200/login
+      ACCESS_TOKEN_MINUTES: 5
+      REFRESH_TOKEN_DAYS: 7
+      EMAIL_VERIFICATION_TTL_MINUTES: 30
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-488480628324-uv5dt3j8rsf7ud80n1ok3tgek2be5t4b.apps.googleusercontent.com}
+    depends_on:
+      - discoveryserver
+      - redis
+      - axonserver
+      - kafka
+    networks:
+      - microservice-network
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: notificationservice/Dockerfile
+    container_name: notificationservice
+    hostname: notificationservice
+    restart: unless-stopped
+    ports:
+      - "9004:9004"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_ID: fullstack
+      EMAIL_VERIFICATION_TOPIC: email-verification
+      AXON_SERVER_SERVERS: axonserver:8124
+      FRONTEND_LOGIN_URL: http://localhost:4200/login
+    depends_on:
+      - kafka
+      - axonserver
+    networks:
+      - microservice-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    hostname: user-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      USER_SERVICE_PORT: 8082
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    container_name: product-service
+    hostname: product-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PRODUCT_SERVICE_PORT: 8083
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+    depends_on:
+      - discoveryserver
+      - axonserver
+      - kafka
+    networks:
+      - microservice-network
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: admin-service/Dockerfile
+    container_name: admin-service
+    hostname: admin-service
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      SERVER_PORT: 8090
+      APP_NAME: admin-service
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CONSUMER_GROUP_ID: admin-service
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      AXON_SERVERS: axonserver:8124
+      EUREKA_URI: http://discoveryserver:8761/eureka
+    depends_on:
+      - discoveryserver
+      - axonserver
+      - kafka
+    networks:
+      - microservice-network
+  
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: inventory-service
+    hostname: inventory-service
+    restart: unless-stopped
+    ports:
+      - "8184:8184"
+    environment:
+      INVENTORY_SERVICE_PORT: 8184
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_INSTANCE_HOSTNAME: inventory-service
+      EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    hostname: order-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      ORDER_SERVICE_PORT: 8084
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_URL: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+    volumes:
+      - order_data:/app/data
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  shipping-service:
+    build:
+      context: .
+      dockerfile: shipping-service/Dockerfile
+    container_name: shipping-service
+    hostname: shipping-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SHIPPING_SERVICE_PORT: 8085
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_URL: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+    volumes:
+      - shipping_data:/app/data
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
+    hostname: payment-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      PAYMENT_SERVICE_PORT: 8086
+      AXON_SERVER_SERVERS: axonserver:8124
+      EUREKA_URL: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
+      PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-http://localhost:8080/api/payments/payos/return}
+      PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-http://localhost:8080/api/payments/payos/cancel}
+      FRONTEND_HOME_URL: ${FRONTEND_HOME_URL:-http://localhost:4200/home}
+    volumes:
+      - payment_data:/app/data
+    depends_on:
+      - discoveryserver
+      - axonserver
+    networks:
+      - microservice-network
+
+  # --- INFRASTRUCTURE SERVICES ---
+
+  axonserver:
+    image: axoniq/axonserver:latest
+    container_name: axonserver
+    hostname: axonserver
+    restart: unless-stopped
+    environment:
+      AXONIQ_AXONSERVER_STANDALONE: "TRUE"
+    ports:
+      - "8024:8024"
+      - "8124:8124"
+      - "8224:8224"
+    networks:
+      - microservice-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    hostname: redis
+    restart: always
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  mailpit:
-    image: axllent/mailpit
-    container_name: watch-mailpit
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
+    networks:
+      - microservice-network
 
   kafka:
     image: apache/kafka:3.7.0
     container_name: watch-kafka
+    hostname: kafka
     restart: unless-stopped
     ports:
-      - "9092:9092"
+      - "9092:29092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - microservice-network
 
-  axonserver:
-    image: axoniq/axonserver:2024.0.4
-    container_name: watch-axonserver
-    hostname: watch-axonserver
-    restart: unless-stopped
-    ports:
-      - "8124:8124"
-      - "8024:8024"
-    volumes:
-      - axon_data:/axonserver/data
-      - axon_events:/axonserver/events
-
-  discoveryserver:
-    build:
-      context: ./discoveryserver
-      dockerfile: Dockerfile
-    container_name: watch-discoveryserver
-    restart: unless-stopped
-    ports:
-      - "8761:8761"
+networks:
+  microservice-network:
+    driver: bridge
 
 volumes:
-  axon_data:
-  axon_events:
+  order_data:
+  shipping_data:
+  payment_data:

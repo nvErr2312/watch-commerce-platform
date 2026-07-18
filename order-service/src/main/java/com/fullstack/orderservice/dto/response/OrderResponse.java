@@ -1,6 +1,7 @@
 package com.fullstack.orderservice.dto.response;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,4 +15,5 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private String shippingAddress;
     private String paymentUrl;
+    private Instant confirmAvailableAt;
 }

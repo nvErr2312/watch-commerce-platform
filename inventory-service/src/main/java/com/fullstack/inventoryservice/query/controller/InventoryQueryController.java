@@ -19,7 +19,7 @@ import com.fullstack.commonservice.response.ResponseData;
 import com.fullstack.inventoryservice.common.AxonExceptions;
 
 @RestController
-@RequestMapping("/api/inventory")
+@RequestMapping("/api/v1/inventory")
 public class InventoryQueryController {
 
     private final QueryGateway queryGateway;

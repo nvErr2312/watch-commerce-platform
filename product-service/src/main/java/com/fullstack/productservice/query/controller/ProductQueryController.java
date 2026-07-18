@@ -22,7 +22,7 @@ import com.fullstack.productservice.dto.ProductResponse;
 import com.fullstack.productservice.query.entity.ProductView;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 public class ProductQueryController {
 
     private final QueryGateway queryGateway;

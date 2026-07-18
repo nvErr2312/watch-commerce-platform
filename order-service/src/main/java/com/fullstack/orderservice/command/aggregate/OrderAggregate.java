@@ -42,6 +42,7 @@ public class OrderAggregate {
 
     @CommandHandler
     public void handle(UpdateOrderTotalCommand command) {
+        requireStatus(OrderStatus.PENDING_SHIPPING_FEE, "Order is not waiting for shipping fee");
         AggregateLifecycle.apply(new OrderTotalUpdatedEvent(
                 command.getOrderId(),
                 command.getShippingFee(),
@@ -51,6 +52,12 @@ public class OrderAggregate {
 
     @CommandHandler
     public void handle(CancelOrderCommand command) {
+        if (OrderStatus.CANCELLED.equals(status)) {
+            return;
+        }
+        if (OrderStatus.COMPLETED.equals(status)) {
+            throw new IllegalStateException("Completed order cannot be cancelled");
+        }
         AggregateLifecycle.apply(new OrderCancelledEvent(
                 command.getOrderId(),
                 command.getReason(),
@@ -59,17 +66,35 @@ public class OrderAggregate {
 
     @CommandHandler
     public void handle(RequestOrderCancelCommand command) {
+        if (OrderStatus.CANCELLED.equals(status)) {
+            return;
+        }
+        if (!OrderStatus.PENDING_SHIPPING_FEE.equals(status)) {
+            throw new IllegalStateException("Order can no longer be cancelled");
+        }
         AggregateLifecycle.apply(new OrderCancelRequestedEvent(command.getOrderId(), command.getReason()));
     }
 
     @CommandHandler
     public void handle(UpdateOrderStatusCommand command) {
+        if (OrderStatus.SHIPPING_CREATED.name().equals(command.getStatus())
+                && OrderStatus.SHIPPING_CREATED.equals(status)) {
+            return;
+        }
+        requireStatus(OrderStatus.PENDING_PAYMENT, "Order is not ready for shipping");
         AggregateLifecycle.apply(new OrderStatusUpdatedEvent(command.getOrderId(), command.getStatus()));
     }
 
     @CommandHandler
     public void handle(ConfirmReceivedCommand command) {
+        requireStatus(OrderStatus.SHIPPING_CREATED, "Order is not being shipped");
         AggregateLifecycle.apply(new OrderCompletedEvent(command.getOrderId(), OrderStatus.COMPLETED.name()));
+    }
+
+    private void requireStatus(OrderStatus expected, String message) {
+        if (!expected.equals(status)) {
+            throw new IllegalStateException(message);
+        }
     }
 
     @EventSourcingHandler

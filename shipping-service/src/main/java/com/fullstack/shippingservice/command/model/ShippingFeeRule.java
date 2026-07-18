@@ -21,4 +21,7 @@ public class ShippingFeeRule {
 
     @Column(nullable = false)
     private BigDecimal fee;
+
+    @Column(name = "remote_fee")
+    private BigDecimal remoteFee;
 }

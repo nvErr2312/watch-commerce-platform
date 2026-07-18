@@ -1,24 +1,31 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, finalize, Observable, shareReplay, switchMap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AuthStore } from '../auth/auth.store';
 import { TokenStorageService } from '../auth/token-storage.service';
 import { TokenResponse } from '../api/identity/identity-api.service';
 
-const PUBLIC_AUTH_ENDPOINTS = ['/auth/login', '/auth/google', '/auth/register', '/auth/refresh', '/auth/logout'];
+const PUBLIC_ENDPOINTS = [
+  '/auth/login', '/auth/google', '/auth/register', '/auth/refresh', '/auth/logout',
+  '/api/products', '/api/inventory',
+];
 let refreshRequest$: Observable<TokenResponse> | null = null;
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthStore);
   const tokenStorage = inject(TokenStorageService);
   const token = tokenStorage.getAccessToken();
-  const isPublicAuthRequest = PUBLIC_AUTH_ENDPOINTS.some((endpoint) => request.url.includes(endpoint));
+  const apiRequest = request.url.startsWith('/api')
+    ? request.clone({ url: `${environment.apiUrl}${request.url}` })
+    : request;
+  const isPublicRequest = PUBLIC_ENDPOINTS.some((endpoint) => apiRequest.url.includes(endpoint));
 
-  if (!token || isPublicAuthRequest) {
-    return next(request);
+  if (!token || isPublicRequest) {
+    return next(apiRequest);
   }
 
-  const authenticatedRequest = request.clone({
+  const authenticatedRequest = apiRequest.clone({
     setHeaders: {
       Authorization: `Bearer ${token}`,
     },
@@ -42,7 +49,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
           auth.logoutLocal();
           return throwError(() => refreshError);
         }),
-        switchMap((tokens) => next(request.clone({
+        switchMap((tokens) => next(apiRequest.clone({
           setHeaders: {
             Authorization: `Bearer ${tokens.accessToken}`,
           },

@@ -8,6 +8,11 @@ services:
     restart: unless-stopped
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     networks:
       - microservice-network
 
@@ -26,8 +31,10 @@ services:
       EUREKA_INSTANCE_HOSTNAME: apigateway
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
     depends_on:
-      - discoveryserver
-      - redis
+      discoveryserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -58,11 +65,18 @@ services:
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-488480628324-uv5dt3j8rsf7ud80n1ok3tgek2be5t4b.apps.googleusercontent.com}
+      IDENTITY_DB_URL: jdbc:h2:file:/app/data/watch_identity_db;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    volumes:
+      - identity_data:/app/data
     depends_on:
-      - discoveryserver
-      - redis
-      - axonserver
-      - kafka
+      discoveryserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -81,9 +95,13 @@ services:
       EMAIL_VERIFICATION_TOPIC: email-verification
       AXON_SERVER_SERVERS: axonserver:8124
       FRONTEND_LOGIN_URL: http://localhost:4200/login
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     depends_on:
-      - kafka
-      - axonserver
+      kafka:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -103,9 +121,14 @@ services:
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      USER_DB_URL: jdbc:h2:file:/app/data/watch_user_db;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    volumes:
+      - user_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -122,14 +145,20 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PRODUCT_SERVICE_PORT: 8083
       AXON_SERVER_SERVERS: axonserver:8124
-      EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_INSTANCE_HOSTNAME: product-service
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      PRODUCT_DB_URL: jdbc:h2:file:/app/data/watch_product_db;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    volumes:
+      - product_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
-      - kafka
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -151,9 +180,12 @@ services:
       AXON_SERVERS: axonserver:8124
       EUREKA_URI: http://discoveryserver:8761/eureka
     depends_on:
-      - discoveryserver
-      - axonserver
-      - kafka
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - microservice-network
   
@@ -171,9 +203,16 @@ services:
       AXON_SERVER_SERVERS: axonserver:8124
       EUREKA_INSTANCE_HOSTNAME: inventory-service
       EUREKA_DEFAULT_ZONE: http://discoveryserver:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      INVENTORY_DB_URL: jdbc:h2:file:/app/data/watch_inventory_db;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    volumes:
+      - inventory_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -195,8 +234,10 @@ services:
     volumes:
       - order_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -218,8 +259,10 @@ services:
     volumes:
       - shipping_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
@@ -244,18 +287,22 @@ services:
       PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-http://localhost:8080/api/payments/payos/return}
       PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-http://localhost:8080/api/payments/payos/cancel}
       FRONTEND_HOME_URL: ${FRONTEND_HOME_URL:-http://localhost:4200/home}
+      PAYMENT_EXPIRE_MINUTES: ${PAYMENT_EXPIRE_MINUTES:-10}
+      PAYMENT_EXPIRE_SCAN_DELAY_MS: ${PAYMENT_EXPIRE_SCAN_DELAY_MS:-10000}
     volumes:
       - payment_data:/app/data
     depends_on:
-      - discoveryserver
-      - axonserver
+      discoveryserver:
+        condition: service_healthy
+      axonserver:
+        condition: service_healthy
     networks:
       - microservice-network
 
   # --- INFRASTRUCTURE SERVICES ---
 
   axonserver:
-    image: axoniq/axonserver:latest
+    image: axoniq/axonserver:2024.0.4
     container_name: axonserver
     hostname: axonserver
     restart: unless-stopped
@@ -265,16 +312,32 @@ services:
       - "8024:8024"
       - "8124:8124"
       - "8224:8224"
+    volumes:
+      - axon_data:/axonserver/data
+      - axon_events:/axonserver/events
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8024/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     networks:
       - microservice-network
 
   redis:
-    image: redis:latest
+    image: redis:7.2-alpine
     container_name: redis
     hostname: redis
     restart: always
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - microservice-network
 
@@ -297,6 +360,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
     networks:
       - microservice-network
 
@@ -305,6 +373,13 @@ networks:
     driver: bridge
 
 volumes:
+  axon_data:
+  axon_events:
+  identity_data:
+  user_data:
+  product_data:
+  inventory_data:
+  redis_data:
   order_data:
   shipping_data:
   payment_data:

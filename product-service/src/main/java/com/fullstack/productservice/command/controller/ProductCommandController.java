@@ -27,7 +27,7 @@ import com.fullstack.productservice.dto.CreateProductRequest;
 import com.fullstack.productservice.dto.UpdateProductRequest;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 public class ProductCommandController {
 
     private final CommandGateway commandGateway;

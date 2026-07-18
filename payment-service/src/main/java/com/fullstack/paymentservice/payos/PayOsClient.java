@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +35,7 @@ public class PayOsClient {
     private String returnUrl;
     @Value("${app.payos.cancel-url}")
     private String cancelUrl;
-    @Value("${app.payment.expire-minutes:15}")
+    @Value("${app.payment.expire-minutes:10}")
     private long expireMinutes;
 
     public PayOsPaymentLink createPaymentLink(Long orderId, BigDecimal amount) {
@@ -43,8 +44,8 @@ public class PayOsClient {
         Instant expiresAt = Instant.now().plus(Duration.ofMinutes(expireMinutes));
         long expiredAt = expiresAt.getEpochSecond();
         String description = ("DH" + orderId).substring(0, Math.min(9, ("DH" + orderId).length()));
-        String signature = sign("amount=%d&cancelUrl=%s&description=%s&expiredAt=%d&orderCode=%d&returnUrl=%s"
-                .formatted(vnd, cancelUrl, description, expiredAt, orderId, returnUrl));
+        String signature = sign("amount=%d&cancelUrl=%s&description=%s&orderCode=%d&returnUrl=%s"
+                .formatted(vnd, cancelUrl, description, orderId, returnUrl));
         Map<String, Object> body = Map.of(
                 "orderCode", orderId,
                 "amount", vnd,
@@ -74,6 +75,24 @@ public class PayOsClient {
     public boolean validSignature(JsonNode data, String signature) {
         requireConfig();
         return signature != null && signature.equals(sign(flatten(data)));
+    }
+
+    public boolean hasStatus(Long orderId, String expectedStatus) {
+        requireConfig();
+        try {
+            JsonNode response = restClientBuilder.baseUrl(apiUrl).build()
+                    .get()
+                    .uri("/v2/payment-requests/{id}", orderId)
+                    .header("x-client-id", clientId)
+                    .header("x-api-key", apiKey)
+                    .retrieve()
+                    .body(JsonNode.class);
+            return response != null
+                    && "00".equals(response.path("code").asText())
+                    && expectedStatus.equalsIgnoreCase(response.path("data").path("status").asText());
+        } catch (RestClientException ignored) {
+            return false;
+        }
     }
 
     private String flatten(JsonNode data) {

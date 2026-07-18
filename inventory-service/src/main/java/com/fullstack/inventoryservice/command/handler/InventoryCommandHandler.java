@@ -1,5 +1,6 @@
 package com.fullstack.inventoryservice.command.handler;
 
+import com.fullstack.commonservice.inventory.command.AdjustInventoryCommand;
 import com.fullstack.commonservice.inventory.command.ReleaseInventoryCommand;
 import com.fullstack.commonservice.inventory.command.ReserveInventoryCommand;
 import com.fullstack.commonservice.inventory.event.InventoryReserveFailedEvent;
@@ -30,14 +31,35 @@ public class InventoryCommandHandler {
 
     @CommandHandler
     @Transactional
+    public void handle(AdjustInventoryCommand command) {
+        if (command.getAvailableQuantity() < 0) {
+            throw new IllegalArgumentException("Số lượng tồn kho không được âm");
+        }
+        InventoryItem item = inventoryItemRepository.findByIdForUpdate(command.getProductId()).orElseGet(() -> {
+            InventoryItem created = new InventoryItem();
+            created.setProductId(command.getProductId());
+            return created;
+        });
+        item.setAvailableQuantity(command.getAvailableQuantity());
+        inventoryItemRepository.save(item);
+    }
+
+    @CommandHandler
+    @Transactional
     public void handle(ReserveInventoryCommand command) {
         Map<UUID, Integer> requestedQuantityByProduct = requestedQuantityByProduct(command);
         if (requestedQuantityByProduct.isEmpty()) {
             eventGateway.publish(new InventoryReserveFailedEvent(command.getOrderId(), "Inventory items are empty"));
             return;
         }
-        if (repository.existsById(command.getOrderId())) {
-            publishReserved(command);
+        InventoryReservation existing = repository.findById(command.getOrderId()).orElse(null);
+        if (existing != null) {
+            if (ReservationStatus.RESERVED.name().equals(existing.getStatus())) {
+                publishReserved(command);
+            } else {
+                eventGateway.publish(new InventoryReserveFailedEvent(
+                        command.getOrderId(), "Inventory reservation was already released"));
+            }
             return;
         }
 

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ShippingFeeController {
     private final ShippingFeeRuleRepository repository;
 
-    @GetMapping("/api/shipping/fees")
+    @GetMapping("/api/v1/shipping/fees")
     public List<ShippingFeeRule> shippingFees() {
         return repository.findAll();
     }

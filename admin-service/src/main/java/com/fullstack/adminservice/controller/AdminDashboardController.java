@@ -17,7 +17,7 @@ import com.fullstack.commonservice.bmad.nguoi3.dto.product.ProductSummaryDto;
 import com.fullstack.commonservice.response.ResponseData;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/v1/admin")
 public class AdminDashboardController {
 
     private final ProductQueryClient productQueryClient;

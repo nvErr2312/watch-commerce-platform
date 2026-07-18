@@ -35,7 +35,7 @@ public class ProductProjection {
 
     @EventHandler
     public void on(ProductCreatedEvent event) {
-        ProductView view = new ProductView();
+        ProductView view = repository.findById(event.getProductId()).orElseGet(ProductView::new);
         view.setId(event.getProductId());
         view.setName(event.getName());
         view.setBrand(event.getBrand());

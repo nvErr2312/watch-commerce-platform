@@ -9,6 +9,7 @@ import com.fullstack.paymentservice.payos.PayOsClient;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ public class PayOsPaymentController {
     private final PayOsClient payOsClient;
 
     @PostMapping("/api/payments/payos/webhook")
+    @Transactional
     public ResponseEntity<Void> webhook(@RequestBody JsonNode payload) {
         JsonNode data = payload.path("data");
         if (!payOsClient.validSignature(data, payload.path("signature").asText(null))) {
@@ -38,24 +40,31 @@ public class PayOsPaymentController {
     private String homeUrl;
 
     @GetMapping("/api/payments/payos/cancel")
+    @Transactional
     public ResponseEntity<Void> cancel(@org.springframework.web.bind.annotation.RequestParam(value = "orderCode", required = false) Long orderId) {
-        if (orderId != null) {
+        boolean cancelled = orderId != null && payOsClient.hasStatus(orderId, "CANCELLED");
+        if (cancelled) {
             markCancelled(orderId);
         }
         return ResponseEntity.status(302)
-                .header("Location", homeUrl + "?status=cancel")
+                .header("Location", homeUrl + "?status=" + (cancelled ? "cancel" : "pending"))
                 .build();
     }
 
     @GetMapping("/api/payments/payos/return")
+    @Transactional
     public ResponseEntity<Void> success(@org.springframework.web.bind.annotation.RequestParam(value = "orderCode", required = false) Long orderId) {
+        boolean paid = orderId != null && payOsClient.hasStatus(orderId, "PAID");
+        if (paid) {
+            markSucceeded(orderId);
+        }
         return ResponseEntity.status(302)
-                .header("Location", homeUrl + "?status=success")
+                .header("Location", homeUrl + "?status=" + (paid ? "success" : "pending"))
                 .build();
     }
 
     private void markSucceeded(Long orderId) {
-        repository.findByOrderId(orderId).ifPresent(payment -> {
+        repository.findByOrderIdForUpdate(orderId).ifPresent(payment -> {
             if (!PaymentStatus.PENDING.name().equals(payment.getStatus())) {
                 return;
             }
@@ -66,7 +75,7 @@ public class PayOsPaymentController {
     }
 
     private void markCancelled(Long orderId) {
-        repository.findByOrderId(orderId).ifPresent(payment -> {
+        repository.findByOrderIdForUpdate(orderId).ifPresent(payment -> {
             if (!PaymentStatus.PENDING.name().equals(payment.getStatus())) {
                 return;
             }

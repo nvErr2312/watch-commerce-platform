@@ -36,7 +36,7 @@ import com.fullstack.commonservice.response.ResponseData;
  * database directly (FR35).
  */
 @RestController
-@RequestMapping("/api/admin/products")
+@RequestMapping("/api/v1/admin/products")
 public class AdminProductController {
 
     private final CommandGateway commandGateway;

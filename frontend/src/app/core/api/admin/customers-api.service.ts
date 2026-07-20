@@ -7,8 +7,15 @@ export interface AdminCustomer { id: string | number; email: string; username: s
 @Injectable({ providedIn: 'root' })
 export class CustomersApiService {
   private readonly http = inject(HttpClient);
-  list(): Observable<{ code: string; message: string; data: AdminCustomer[] }> {
-    return this.http.get<{ code: string; message: string; data: AdminCustomer[] }>('/api/v1/admin/customers');
+  list(search = '', status = ''): Observable<{ code: string; message: string; data: AdminCustomer[] }> {
+    const params: Record<string, string> = {};
+    if (search.trim()) {
+      params['search'] = search.trim();
+    }
+    if (status) {
+      params['status'] = status;
+    }
+    return this.http.get<{ code: string; message: string; data: AdminCustomer[] }>('/api/v1/admin/customers', { params });
   }
 
   delete(userId: string | number): Observable<{ code: string; message: string; data: string }> {

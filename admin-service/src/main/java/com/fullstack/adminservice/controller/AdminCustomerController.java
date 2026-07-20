@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,9 +27,18 @@ public class AdminCustomerController {
     }
 
     @GetMapping
-    public ResponseData<List<UserResult>> list() {
+    public ResponseData<List<UserResult>> list(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
         try {
-            return new ResponseData<>("SUCCESS", "Lấy danh sách khách hàng thành công", userQueryClient.findAll().get());
+            String normalizedSearch = search == null ? "" : search.trim().toLowerCase();
+            String normalizedStatus = status == null ? "" : status.trim().toUpperCase();
+            List<UserResult> customers = userQueryClient.findAll().get().stream()
+                    .filter(user -> "USER".equals(user.getRole()))
+                    .filter(user -> normalizedStatus.isBlank() || normalizedStatus.equals(user.getStatus()))
+                    .filter(user -> normalizedSearch.isBlank() || matchesSearch(user, normalizedSearch))
+                    .toList();
+            return new ResponseData<>("SUCCESS", "Lay danh sach khach hang thanh cong", customers);
         } catch (ExecutionException e) {
             throw AxonExceptions.unwrap(e);
         } catch (InterruptedException e) {
@@ -40,16 +50,27 @@ public class AdminCustomerController {
     @DeleteMapping("/{userId}")
     public ResponseData<Long> delete(@PathVariable Long userId) {
         if (userId == 1L) {
-            throw new IllegalArgumentException("Không thể xóa tài khoản quản trị viên");
+            throw new IllegalArgumentException("Khong the xoa tai khoan quan tri vien");
         }
         try {
             commandGateway.send(new DeleteUserCommand(userId)).get();
-            return new ResponseData<>("SUCCESS", "Xóa tài khoản thành công", userId);
+            return new ResponseData<>("SUCCESS", "Xoa tai khoan thanh cong", userId);
         } catch (ExecutionException e) {
             throw AxonExceptions.unwrap(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
         }
+    }
+
+    private boolean matchesSearch(UserResult user, String search) {
+        return contains(user.getEmail(), search)
+                || contains(user.getUsername(), search)
+                || contains(user.getFullName(), search)
+                || contains(user.getPhone(), search);
+    }
+
+    private boolean contains(String value, String search) {
+        return value != null && value.toLowerCase().contains(search);
     }
 }
